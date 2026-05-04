@@ -26,8 +26,15 @@
 
 - Do not switch `dev:cli` to Bun workspace filtering. The root script intentionally uses `bun run --cwd apps/cli dev` because `bun run --filter @puhutko/cli dev` can print wrapper/status output that leaks into the fullscreen OpenTUI screen.
 - `dev:server` is safe to keep workspace-native with `bun run --filter @puhutko/server dev`.
+- In OpenTUI, raising `zIndex` on an absolutely positioned child may not be enough to overlay later sibling content. If a popup still renders under surrounding UI, raise the `zIndex` on the popup's outer wrapper too so the whole component stacks above sibling layout items.
 
 ## Verification
 
 - There is no lint or test setup yet. The only verified automated check is TypeScript typechecking via `bun run check`.
 - For focused checks, run `bun run check` inside `apps/server/`, `apps/cli/`, or `packages/shared/`.
+
+## Code Style
+
+- Prefer `import React from "react"` over named React imports.
+- Prefer `React.useState`, `React.useEffect`, and other `React.*` hook calls instead of importing hooks directly.
+- Prefer `React.ReactNode` for React types instead of importing `ReactNode` separately.

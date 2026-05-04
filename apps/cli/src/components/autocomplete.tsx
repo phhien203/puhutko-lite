@@ -1,0 +1,329 @@
+import { RenderableEvents, type InputRenderable } from "@opentui/core"
+import { useKeyboard } from "@opentui/react"
+import React from "react"
+import { useDebounce } from "../hooks/use-debounce"
+
+type AutocompleteProps<T> = {
+  value: string
+  onChange: (value: string) => void
+  onSelect: (item: T) => void
+  loaderFn: (query: string, signal: AbortSignal) => Promise<T[]>
+  getItemLabel: (item: T) => string
+  getItemValue?: (item: T) => string
+  getItemDescription?: (item: T) => string | undefined
+  onError?: (error: unknown) => void
+  onActiveChange?: (active: boolean) => void
+  placeholder?: string
+  debounceMs?: number
+  minQueryLength?: number
+  maxVisibleItems?: number
+}
+
+export function Autocomplete<T>({
+  value,
+  onChange,
+  onSelect,
+  loaderFn,
+  getItemLabel,
+  getItemValue,
+  getItemDescription,
+  onError,
+  onActiveChange,
+  placeholder,
+  debounceMs = 300,
+  minQueryLength = 2,
+  maxVisibleItems = 5,
+}: AutocompleteProps<T>) {
+  const [items, setItems] = React.useState<T[]>([])
+  const [isFocused, setIsFocused] = React.useState(false)
+  const [isOpen, setIsOpen] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [highlightedIndex, setHighlightedIndex] = React.useState(0)
+  const [shouldFocusInput, setShouldFocusInput] = React.useState(true)
+  const [wasDismissedByEscape, setWasDismissedByEscape] = React.useState(false)
+  const latestRequestIdRef = React.useRef(0)
+  const abortControllerRef = React.useRef<AbortController | null>(null)
+  const inputRef = React.useRef<InputRenderable | null>(null)
+  const itemsRef = React.useRef<T[]>([])
+  const isFocusedRef = React.useRef(false)
+  const pendingProgrammaticValueRef = React.useRef<string | null>(null)
+  const wasDismissedByEscapeRef = React.useRef(false)
+  const debouncedValue = useDebounce(value, debounceMs)
+  const visibleItems = items.slice(0, maxVisibleItems)
+  const active = isFocused || isOpen || isLoading
+
+  const handleInputChange = React.useCallback(
+    (nextValue: string) => {
+      if (pendingProgrammaticValueRef.current === nextValue) {
+        pendingProgrammaticValueRef.current = null
+        return
+      }
+
+      setWasDismissedByEscape(false)
+      onChange(nextValue)
+    },
+    [onChange],
+  )
+
+  const selectHighlightedItem = React.useCallback(() => {
+    if (!isOpen) {
+      return
+    }
+
+    const item = visibleItems[highlightedIndex]
+
+    if (!item) {
+      return
+    }
+
+    const nextValue = getItemValue?.(item) ?? getItemLabel(item)
+
+    pendingProgrammaticValueRef.current = nextValue
+    setWasDismissedByEscape(true)
+    onChange(nextValue)
+    onSelect(item)
+    setIsOpen(false)
+    setHighlightedIndex(0)
+  }, [getItemLabel, getItemValue, highlightedIndex, isOpen, onChange, onSelect, visibleItems])
+
+  React.useEffect(() => {
+    itemsRef.current = items
+  }, [items])
+
+  React.useEffect(() => {
+    isFocusedRef.current = isFocused
+  }, [isFocused])
+
+  React.useEffect(() => {
+    if (shouldFocusInput) {
+      inputRef.current?.focus()
+    }
+  }, [shouldFocusInput])
+
+  React.useEffect(() => {
+    wasDismissedByEscapeRef.current = wasDismissedByEscape
+  }, [wasDismissedByEscape])
+
+  React.useEffect(() => {
+    if (pendingProgrammaticValueRef.current === value) {
+      pendingProgrammaticValueRef.current = null
+    }
+  }, [value])
+
+  React.useEffect(() => {
+    onActiveChange?.(active)
+  }, [active, onActiveChange])
+
+  React.useEffect(() => {
+    const query = value.trim()
+
+    if (query.length < minQueryLength) {
+      setItems([])
+      setIsOpen(false)
+      setIsLoading(false)
+      setHighlightedIndex(0)
+      return
+    }
+
+    if (query !== debouncedValue.trim()) {
+      setIsOpen(false)
+      setHighlightedIndex(0)
+    }
+  }, [debouncedValue, minQueryLength, value])
+
+  React.useEffect(() => {
+    const input = inputRef.current
+
+    if (!input) {
+      return
+    }
+
+    const handleFocused = () => {
+      setShouldFocusInput(true)
+      setIsFocused(true)
+
+      if (itemsRef.current.length > 0 && !wasDismissedByEscapeRef.current) {
+        setIsOpen(true)
+      }
+    }
+
+    const handleBlurred = () => {
+      setShouldFocusInput(false)
+      setIsFocused(false)
+      setIsOpen(false)
+    }
+
+    setIsFocused(input.focused)
+    input.on(RenderableEvents.FOCUSED, handleFocused)
+    input.on(RenderableEvents.BLURRED, handleBlurred)
+
+    return () => {
+      input.off(RenderableEvents.FOCUSED, handleFocused)
+      input.off(RenderableEvents.BLURRED, handleBlurred)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort()
+    }
+  }, [])
+
+  React.useEffect(() => {
+    const query = debouncedValue.trim()
+
+    if (query.length < minQueryLength) {
+      latestRequestIdRef.current += 1
+      abortControllerRef.current?.abort()
+      abortControllerRef.current = null
+      setItems([])
+      setIsOpen(false)
+      setIsLoading(false)
+      setHighlightedIndex(0)
+      setWasDismissedByEscape(false)
+      return
+    }
+
+    abortControllerRef.current?.abort()
+
+    const controller = new AbortController()
+    const requestId = latestRequestIdRef.current + 1
+
+    abortControllerRef.current = controller
+    latestRequestIdRef.current = requestId
+    setIsLoading(true)
+
+    void loaderFn(query, controller.signal)
+      .then((nextItems) => {
+        if (controller.signal.aborted || requestId !== latestRequestIdRef.current) {
+          return
+        }
+
+        setItems(nextItems)
+        setIsLoading(false)
+        setHighlightedIndex(0)
+        setIsOpen(
+          isFocusedRef.current && nextItems.length > 0 && !wasDismissedByEscapeRef.current,
+        )
+      })
+      .catch((error) => {
+        if (controller.signal.aborted || requestId !== latestRequestIdRef.current) {
+          return
+        }
+
+        setItems([])
+        setIsOpen(false)
+        setIsLoading(false)
+        setHighlightedIndex(0)
+        onError?.(error)
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [debouncedValue, loaderFn, minQueryLength, onError])
+
+  useKeyboard((key) => {
+    if (!isFocusedRef.current) {
+      return
+    }
+
+    if (key.name === "up" && isOpen && visibleItems.length > 0) {
+      setHighlightedIndex((currentIndex) =>
+        currentIndex === 0 ? visibleItems.length - 1 : currentIndex - 1,
+      )
+      return
+    }
+
+    if (key.name === "down" && isOpen && visibleItems.length > 0) {
+      setHighlightedIndex((currentIndex) =>
+        currentIndex === visibleItems.length - 1 ? 0 : currentIndex + 1,
+      )
+      return
+    }
+
+    if (key.name === "escape") {
+      if (isOpen) {
+        setIsOpen(false)
+        setWasDismissedByEscape(true)
+        return
+      }
+
+      if (value.length > 0) {
+        handleInputChange("")
+        return
+      }
+
+      setWasDismissedByEscape(true)
+      setShouldFocusInput(false)
+      inputRef.current?.blur()
+    }
+  })
+
+  return (
+    <box width="100%" position="relative" zIndex={isOpen ? 100 : 0}>
+      <box border borderStyle="rounded" paddingX={1} paddingY={0} alignItems="center">
+        <input
+          ref={inputRef}
+          width="100%"
+          position="relative"
+          focused={shouldFocusInput}
+          flexGrow={1}
+          value={value}
+          placeholder={placeholder}
+          onInput={handleInputChange}
+          onSubmit={selectHighlightedItem}
+        />
+        {isLoading ? (
+          <text position="absolute" right={0}>
+            <span fg="green">•</span>
+          </text>
+        ) : null}
+      </box>
+
+      {isOpen && visibleItems.length > 0 ? (
+        <box
+          position="absolute"
+          top={3}
+          left={0}
+          right={0}
+          zIndex={200}
+          backgroundColor="black"
+          border
+          borderStyle="rounded"
+          flexDirection="column"
+        >
+          {visibleItems.map((item, index) => {
+            const description = getItemDescription?.(item)
+            const isHighlighted = index === highlightedIndex
+            const bg = isHighlighted ? "green" : "black"
+            const fg = isHighlighted ? "black" : undefined
+
+            return (
+              <box
+                key={index}
+                paddingX={1}
+                paddingY={0}
+                flexDirection="column"
+                backgroundColor={bg}
+              >
+                <text>
+                  <span bg={bg} fg={fg}>
+                    {getItemLabel(item)}
+                  </span>
+                </text>
+                {description ? (
+                  <text>
+                    <span bg={bg} fg={fg ?? "gray"}>
+                      {description}
+                    </span>
+                  </text>
+                ) : null}
+              </box>
+            )
+          })}
+        </box>
+      ) : null}
+    </box>
+  )
+}

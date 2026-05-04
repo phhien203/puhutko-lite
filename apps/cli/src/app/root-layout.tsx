@@ -1,4 +1,5 @@
 import { useKeyboard, useRenderer } from "@opentui/react"
+import React from "react"
 import { Outlet, useLocation, useNavigate } from "react-router"
 import type { AppRouteMeta } from "./router"
 
@@ -10,11 +11,16 @@ export function RootLayout({ routes }: RootLayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const renderer = useRenderer()
+  const [isAutocompleteActive, setIsAutocompleteActive] = React.useState(false)
 
   const activeRoute = routes.find((route) => route.path === location.pathname)
   const footerHints = routes.map((route) => `[${route.shortcut}] ${route.label}`).join("  ")
 
   useKeyboard((key) => {
+    if (isAutocompleteActive) {
+      return
+    }
+
     if (key.name === "q" || key.name === "escape") {
       renderer.destroy()
       return
@@ -40,7 +46,7 @@ export function RootLayout({ routes }: RootLayoutProps) {
       </box>
 
       <box border borderStyle="rounded" padding={1} flexGrow={1} minHeight={0}>
-        <Outlet />
+        <Outlet context={{ setAutocompleteActive: setIsAutocompleteActive }} />
       </box>
 
       <box border borderStyle="rounded" paddingX={1} paddingY={0}>

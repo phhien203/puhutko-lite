@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import React from "react"
 import { createMemoryRouter } from "react-router"
 import { RootLayout } from "./root-layout"
 import { AboutScreen } from "../screens/about-screen"
@@ -10,7 +10,7 @@ export type AppRouteMeta = {
   path: `/${string}`
   label: string
   shortcut: string
-  element: ReactNode
+  element: React.ReactNode
 }
 
 export const routes: AppRouteMeta[] = [
