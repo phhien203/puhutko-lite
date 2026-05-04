@@ -8,18 +8,62 @@ type SettingsScreenOutletContext = {
 
 type MockUser = {
   id: string
+  label: string
+  value: string
   name: string
   handle: string
   city: string
 }
 
 const mockUsers: MockUser[] = [
-  { id: "1", name: "Ada Lovelace", handle: "@ada", city: "London" },
-  { id: "2", name: "Alan Turing", handle: "@aturing", city: "Manchester" },
-  { id: "3", name: "Grace Hopper", handle: "@ghopper", city: "New York" },
-  { id: "4", name: "Linus Torvalds", handle: "@linus", city: "Helsinki" },
-  { id: "5", name: "Margaret Hamilton", handle: "@mhamilton", city: "Paoli" },
-  { id: "6", name: "Radia Perlman", handle: "@radia", city: "Portsmouth" },
+  {
+    id: "1",
+    label: "Ada Lovelace",
+    value: "Ada Lovelace",
+    name: "Ada Lovelace",
+    handle: "@ada",
+    city: "London",
+  },
+  {
+    id: "2",
+    label: "Alan Turing",
+    value: "Alan Turing",
+    name: "Alan Turing",
+    handle: "@aturing",
+    city: "Manchester",
+  },
+  {
+    id: "3",
+    label: "Grace Hopper",
+    value: "Grace Hopper",
+    name: "Grace Hopper",
+    handle: "@ghopper",
+    city: "New York",
+  },
+  {
+    id: "4",
+    label: "Linus Torvalds",
+    value: "Linus Torvalds",
+    name: "Linus Torvalds",
+    handle: "@linus",
+    city: "Helsinki",
+  },
+  {
+    id: "5",
+    label: "Margaret Hamilton",
+    value: "Margaret Hamilton",
+    name: "Margaret Hamilton",
+    handle: "@mhamilton",
+    city: "Paoli",
+  },
+  {
+    id: "6",
+    label: "Radia Perlman",
+    value: "Radia Perlman",
+    name: "Radia Perlman",
+    handle: "@radia",
+    city: "Portsmouth",
+  },
 ]
 
 async function loadUsers(query: string, signal: AbortSignal): Promise<MockUser[]> {
@@ -86,9 +130,9 @@ export function SettingsScreen() {
 
 
 
-        {query ? (
+        {selectedUser ? (
           <text>
-            Selected: <strong>{query}</strong>
+            Selected: <strong>{selectedUser.value}</strong>
           </text>
         ) : (
           <text>
@@ -111,9 +155,6 @@ export function SettingsScreen() {
           onChange={handleQueryChange}
           onSelect={setSelectedUser}
           loaderFn={loadUsers}
-          getItemLabel={(user) => user.name}
-          getItemValue={(user) => user.name}
-          // getItemDescription={(user) => `${user.handle}  (${user.city})`}
           onError={handleError}
           onActiveChange={setAutocompleteActive}
           placeholder="Type at least 2 characters"

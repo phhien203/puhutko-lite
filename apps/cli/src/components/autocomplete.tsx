@@ -8,8 +8,6 @@ type AutocompleteProps<T> = {
   onChange: (value: string) => void
   onSelect: (item: T) => void
   loaderFn: (query: string, signal: AbortSignal) => Promise<T[]>
-  getItemLabel: (item: T) => string
-  getItemValue?: (item: T) => string
   getItemDescription?: (item: T) => string | undefined
   onError?: (error: unknown) => void
   onActiveChange?: (active: boolean) => void
@@ -19,13 +17,11 @@ type AutocompleteProps<T> = {
   maxVisibleItems?: number
 }
 
-export function Autocomplete<T>({
+export function Autocomplete<T extends { label: string; value: string }>({
   value,
   onChange,
   onSelect,
   loaderFn,
-  getItemLabel,
-  getItemValue,
   getItemDescription,
   onError,
   onActiveChange,
@@ -76,7 +72,7 @@ export function Autocomplete<T>({
       return
     }
 
-    const nextValue = getItemValue?.(item) ?? getItemLabel(item)
+    const nextValue = item.value
 
     pendingProgrammaticValueRef.current = nextValue
     setWasDismissedByEscape(true)
@@ -84,7 +80,7 @@ export function Autocomplete<T>({
     onSelect(item)
     setIsOpen(false)
     setHighlightedIndex(0)
-  }, [getItemLabel, getItemValue, highlightedIndex, isOpen, onChange, onSelect, visibleItems])
+  }, [highlightedIndex, isOpen, onChange, onSelect, visibleItems])
 
   React.useEffect(() => {
     itemsRef.current = items
@@ -308,10 +304,10 @@ export function Autocomplete<T>({
                 backgroundColor={bg}
               >
                 <text>
-                  <span bg={bg} fg={fg}>
-                    {getItemLabel(item)}
-                  </span>
-                </text>
+                    <span bg={bg} fg={fg}>
+                      {item.label}
+                    </span>
+                  </text>
                 {description ? (
                   <text>
                     <span bg={bg} fg={fg ?? "gray"}>
