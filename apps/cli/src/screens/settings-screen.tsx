@@ -98,6 +98,18 @@ export function SettingsScreen() {
   const [selectedUser, setSelectedUser] = React.useState<MockUser | null>(null)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
 
+  const createCustomUser = React.useCallback(
+    (nextValue: string): MockUser => ({
+      id: `custom:${nextValue}`,
+      label: nextValue,
+      value: nextValue,
+      name: nextValue,
+      handle: "",
+      city: "",
+    }),
+    [],
+  )
+
   React.useEffect(() => {
     return () => {
       setAutocompleteActive(false)
@@ -155,6 +167,7 @@ export function SettingsScreen() {
           onChange={handleQueryChange}
           onSelect={setSelectedUser}
           loaderFn={loadUsers}
+          createItemFromValue={createCustomUser}
           onError={handleError}
           onActiveChange={setAutocompleteActive}
           placeholder="Type at least 2 characters"

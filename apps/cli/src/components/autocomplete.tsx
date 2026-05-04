@@ -8,6 +8,7 @@ type AutocompleteProps<T> = {
   onChange: (value: string) => void
   onSelect: (item: T) => void
   loaderFn: (query: string, signal: AbortSignal) => Promise<T[]>
+  createItemFromValue?: (value: string) => T
   getItemDescription?: (item: T) => string | undefined
   onError?: (error: unknown) => void
   onActiveChange?: (active: boolean) => void
@@ -22,6 +23,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
   onChange,
   onSelect,
   loaderFn,
+  createItemFromValue,
   getItemDescription,
   onError,
   onActiveChange,
@@ -34,7 +36,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
   const [isFocused, setIsFocused] = React.useState(false)
   const [isOpen, setIsOpen] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
-  const [highlightedIndex, setHighlightedIndex] = React.useState(0)
+  const [highlightedIndex, setHighlightedIndex] = React.useState<number | null>(null)
   const [shouldFocusInput, setShouldFocusInput] = React.useState(true)
   const [wasDismissedByEscape, setWasDismissedByEscape] = React.useState(false)
   const latestRequestIdRef = React.useRef(0)
@@ -61,26 +63,40 @@ export function Autocomplete<T extends { label: string; value: string }>({
     [onChange],
   )
 
-  const selectHighlightedItem = React.useCallback(() => {
-    if (!isOpen) {
+  const selectItem = React.useCallback(
+    (item: T) => {
+      const nextValue = item.value
+
+      pendingProgrammaticValueRef.current = nextValue
+      setWasDismissedByEscape(true)
+      onChange(nextValue)
+      onSelect(item)
+      setIsOpen(false)
+      setHighlightedIndex(null)
+    },
+    [onChange, onSelect],
+  )
+
+  const submitCurrentValue = React.useCallback(() => {
+    if (highlightedIndex !== null) {
+      const item = visibleItems[highlightedIndex]
+
+      if (item) {
+        selectItem(item)
+      }
+
       return
     }
 
-    const item = visibleItems[highlightedIndex]
+    const customItem = createItemFromValue
+      ? createItemFromValue(value)
+      : ({ label: value, value, name: value } as unknown as T)
 
-    if (!item) {
-      return
-    }
-
-    const nextValue = item.value
-
-    pendingProgrammaticValueRef.current = nextValue
     setWasDismissedByEscape(true)
-    onChange(nextValue)
-    onSelect(item)
     setIsOpen(false)
-    setHighlightedIndex(0)
-  }, [highlightedIndex, isOpen, onChange, onSelect, visibleItems])
+    setHighlightedIndex(null)
+    onSelect(customItem)
+  }, [createItemFromValue, highlightedIndex, onSelect, selectItem, value, visibleItems])
 
   React.useEffect(() => {
     itemsRef.current = items
@@ -117,14 +133,14 @@ export function Autocomplete<T extends { label: string; value: string }>({
       setItems([])
       setIsOpen(false)
       setIsLoading(false)
-      setHighlightedIndex(0)
+      setHighlightedIndex(null)
       return
     }
 
-    if (query !== debouncedValue.trim()) {
-      setIsOpen(false)
-      setHighlightedIndex(0)
-    }
+      if (query !== debouncedValue.trim()) {
+        setIsOpen(false)
+        setHighlightedIndex(null)
+      }
   }, [debouncedValue, minQueryLength, value])
 
   React.useEffect(() => {
@@ -147,6 +163,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
       setShouldFocusInput(false)
       setIsFocused(false)
       setIsOpen(false)
+      setHighlightedIndex(null)
     }
 
     setIsFocused(input.focused)
@@ -175,7 +192,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
       setItems([])
       setIsOpen(false)
       setIsLoading(false)
-      setHighlightedIndex(0)
+      setHighlightedIndex(null)
       setWasDismissedByEscape(false)
       return
     }
@@ -197,7 +214,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
 
         setItems(nextItems)
         setIsLoading(false)
-        setHighlightedIndex(0)
+        setHighlightedIndex(null)
         setIsOpen(
           isFocusedRef.current && nextItems.length > 0 && !wasDismissedByEscapeRef.current,
         )
@@ -210,7 +227,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
         setItems([])
         setIsOpen(false)
         setIsLoading(false)
-        setHighlightedIndex(0)
+        setHighlightedIndex(null)
         onError?.(error)
       })
 
@@ -226,14 +243,18 @@ export function Autocomplete<T extends { label: string; value: string }>({
 
     if (key.name === "up" && isOpen && visibleItems.length > 0) {
       setHighlightedIndex((currentIndex) =>
-        currentIndex === 0 ? visibleItems.length - 1 : currentIndex - 1,
+        currentIndex === null || currentIndex === 0
+          ? visibleItems.length - 1
+          : currentIndex - 1,
       )
       return
     }
 
     if (key.name === "down" && isOpen && visibleItems.length > 0) {
       setHighlightedIndex((currentIndex) =>
-        currentIndex === visibleItems.length - 1 ? 0 : currentIndex + 1,
+        currentIndex === null || currentIndex === visibleItems.length - 1
+          ? 0
+          : currentIndex + 1,
       )
       return
     }
@@ -268,7 +289,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
           value={value}
           placeholder={placeholder}
           onInput={handleInputChange}
-          onSubmit={selectHighlightedItem}
+          onSubmit={submitCurrentValue}
         />
         {isLoading ? (
           <text position="absolute" right={0}>
