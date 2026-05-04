@@ -1,0 +1,14 @@
+{
+  "name": "puhutko-lite",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:server": "bun run --filter @puhutko/server dev",
+    "dev:cli": "bun run --cwd apps/cli dev",
+    "check": "bun run --filter @puhutko/shared check && bun run --filter @puhutko/server check && bun run --filter @puhutko/cli check"
+  }
+}

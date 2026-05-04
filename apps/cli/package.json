@@ -1,0 +1,21 @@
+{
+  "name": "@puhutko/cli",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch run src/index.tsx",
+    "start": "bun run src/index.tsx",
+    "check": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@opentui/core": "0.2.2",
+    "@opentui/react": "0.2.2",
+    "@puhutko/shared": "workspace:*",
+    "react": "19.2.5"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.13",
+    "@types/react": "19.2.14",
+    "typescript": "6.0.3"
+  }
+}

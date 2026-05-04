@@ -1,0 +1,18 @@
+{
+  "name": "@puhutko/server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch run src/index.ts",
+    "start": "bun run src/index.ts",
+    "check": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@puhutko/shared": "workspace:*",
+    "hono": "4.12.16"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.13",
+    "typescript": "6.0.3"
+  }
+}
