@@ -1,91 +1,33 @@
 import { useDialog, useDialogState } from "@opentui-ui/dialog/react"
 import { useKeyboard, useTerminalDimensions } from "@opentui/react"
-import type { WiktionarySearchItem, WordDetail } from "@puhutko/shared"
-import { searchFinnishWiktionaryEntries } from "@puhutko/wiktionary"
 import React from "react"
 import { useOutletContext } from "react-router"
-import { Autocomplete } from "../components/autocomplete"
-import { DetailsView } from "../components/details-view"
-import { RecentSearches } from "../components/recent-searches"
-import { TagsManagerDialog } from "../components/word-detail/tags-manager-dialog"
-import { draculaColors, homeScreenTheme } from "../theme/colors"
-import type { HomeScreenAction, HomeScreenOutletContext, HomeScreenState } from "./home-screen.types"
-import { addRecentSearch, getNextFocusTarget } from "./home-screen.utils"
 
-const SIDEBAR_WIDTH = 40
-const NARROW_TERMINAL_WIDTH = 90
+import type { WiktionarySearchItem } from "@puhutko/shared"
+import { searchFinnishWiktionaryEntries } from "@puhutko/wiktionary"
+import { draculaColors, homeScreenTheme } from "../../theme/colors"
+import { DetailsView } from "../common/details-view"
+import { TagsManagerDialog } from "../common/word-tags/tags-manager-dialog"
+import { Autocomplete } from "./components/autocomplete"
+import { RecentSearches } from "./components/recent-searches"
+import { NARROW_TERMINAL_WIDTH, SIDEBAR_WIDTH } from "./word-search.constants"
+import { initialWordSearchState, wordSearchReducer } from "./word-search.reducer"
+import type { TagsManagerDialogWord, WordSearchOutletContext } from "./word-search.types"
+import { addRecentSearch } from "./word-search.utils"
 
-type TagsManagerDialogWord = Pick<WordDetail, "id" | "word">
-
-const initialState: HomeScreenState = {
-  focusTarget: "autocomplete",
-  isSidebarExpanded: true,
-  isAutocompleteActive: false,
-}
-
-function homeScreenReducer(state: HomeScreenState, action: HomeScreenAction): HomeScreenState {
-  switch (action.type) {
-    case "autocomplete/set-active":
-      return {
-        ...state,
-        isAutocompleteActive: action.active,
-      }
-    case "sidebar/toggle":
-      if (action.isNarrowTerminal || state.focusTarget === "autocomplete" || state.isAutocompleteActive) {
-        return state
-      }
-
-      return {
-        ...state,
-        focusTarget: state.isSidebarExpanded ? "details" : state.focusTarget,
-        isSidebarExpanded: !state.isSidebarExpanded,
-      }
-    case "focus/next":
-      if (action.isNarrowTerminal || !state.isSidebarExpanded) {
-        if (state.focusTarget === "details") {
-          return state
-        }
-
-        return {
-          ...state,
-          focusTarget: "details",
-        }
-      }
-
-      return {
-        ...state,
-        focusTarget: getNextFocusTarget(state.focusTarget, action.backwards),
-      }
-    case "layout/sync":
-      if (!action.isSidebarVisible || action.isNarrowTerminal) {
-        if (state.focusTarget === "details") {
-          return state
-        }
-
-        return {
-          ...state,
-          focusTarget: "details",
-        }
-      }
-
-      return state
-    default:
-      return state
-  }
-}
-
-export function HomeScreen() {
+export function WordSearch() {
   const dialog = useDialog()
-  const { setAutocompleteActive } = useOutletContext<HomeScreenOutletContext>()
+  const { setAutocompleteActive } = useOutletContext<WordSearchOutletContext>()
   const { width } = useTerminalDimensions()
   const isDialogOpen = useDialogState((state) => state.isOpen)
+
   const [query, setQuery] = React.useState("")
   const [recentSearches, setRecentSearches] = React.useState<WiktionarySearchItem[]>([])
   const [recentSelectedIndex, setRecentSelectedIndex] = React.useState<number | null>(null)
   const [selectedItem, setSelectedItem] = React.useState<WiktionarySearchItem | null>(null)
   const [selectedDetail, setSelectedDetail] = React.useState<TagsManagerDialogWord | null>(null)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
-  const [state, dispatch] = React.useReducer(homeScreenReducer, initialState)
+  const [state, dispatch] = React.useReducer(wordSearchReducer, initialWordSearchState)
 
   const isNarrowTerminal = width < NARROW_TERMINAL_WIDTH
   const isSidebarVisible = !isNarrowTerminal && state.isSidebarExpanded
@@ -170,7 +112,13 @@ export function HomeScreen() {
 
       void dialog.prompt({
         size: "large",
-        content: (context) => <TagsManagerDialog detail={selectedDetail} dialogId={context.dialogId} dismiss={context.dismiss} />,
+        content: (context) => (
+          <TagsManagerDialog
+            detail={selectedDetail}
+            dialogId={context.dialogId}
+            dismiss={context.dismiss}
+          />
+        ),
       })
       return
     }
@@ -190,7 +138,9 @@ export function HomeScreen() {
       {isSidebarVisible ? (
         <box width={SIDEBAR_WIDTH} flexDirection="column" gap={0} minHeight={0}>
           <box
-            backgroundColor={autocompleteFocused ? draculaColors.currentLine : draculaColors.background}
+            backgroundColor={
+              autocompleteFocused ? draculaColors.currentLine : draculaColors.background
+            }
             flexDirection="column"
             zIndex={state.isAutocompleteActive ? 100 : 0}
           >
@@ -225,7 +175,11 @@ export function HomeScreen() {
         padding={1}
         backgroundColor={detailsFocused ? draculaColors.currentLine : draculaColors.background}
       >
-        <DetailsView item={selectedItem} focused={detailsFocused} onDetailChange={handleDetailChange} />
+        <DetailsView
+          item={selectedItem}
+          focused={detailsFocused}
+          onDetailChange={handleDetailChange}
+        />
       </box>
 
       {errorMessage ? (

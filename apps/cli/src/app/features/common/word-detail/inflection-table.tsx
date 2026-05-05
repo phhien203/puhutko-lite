@@ -1,6 +1,6 @@
 import type { FinnishNominalCase, InflectionForm, WordDetail } from "@puhutko/shared"
 import React from "react"
-import { homeScreenTheme } from "../../theme/colors"
+import { homeScreenTheme } from "../../../theme/colors"
 
 const nominalCaseOrder: FinnishNominalCase[] = [
   "nominative",
@@ -26,12 +26,12 @@ const nounCaseDisplayOrder: Array<{ caseName: FinnishNominalCase; label: string 
   { caseName: "genitive", label: "Genitive" },
   "spacer",
   { caseName: "illative", label: "Illative (S-Mihin)" },
-  { caseName: "inessive", label: "Inessive (S-Missa)" },
-  { caseName: "elative",  label: "Elative  (S-Mista)" },
+  { caseName: "inessive", label: "Inessive (S-Missä)" },
+  { caseName: "elative", label: "Elative  (S-Mistä)" },
   "spacer",
   { caseName: "allative", label: "Allative (L-Mihin)" },
-  { caseName: "adessive", label: "Adessive (L-Milla)" },
-  { caseName: "ablative", label: "Ablative (L-Milta)" },
+  { caseName: "adessive", label: "Adessive (L-Millä)" },
+  { caseName: "ablative", label: "Ablative (L-Miltä)" },
   "spacer",
   { caseName: "essive", label: "Essive" },
   { caseName: "translative", label: "Translative" },
@@ -85,7 +85,9 @@ export function InflectionTable({ detail }: { detail: WordDetail }) {
   }
 
   const isLearningCaseTable = detail.partOfSpeech === "noun" || detail.partOfSpeech === "adjective"
-  const caseRows = isLearningCaseTable ? buildLearningCaseRows(inflections) : buildCaseRows(inflections)
+  const caseRows = isLearningCaseTable
+    ? buildLearningCaseRows(inflections)
+    : buildCaseRows(inflections)
   const otherRows = inflections.filter((form) => form.category !== "case")
 
   return (
@@ -106,9 +108,11 @@ export function InflectionTable({ detail }: { detail: WordDetail }) {
 }
 
 function VerbInflections({ forms }: { forms: InflectionForm[] }) {
-  const hasVerbForms = allVerbSections.some((section) => (
-    verbPersons.some((person) => selectVerbValue(forms, section.tags, person)) || selectPassiveVerbValue(forms, section.tags)
-  ))
+  const hasVerbForms = allVerbSections.some(
+    (section) =>
+      verbPersons.some((person) => selectVerbValue(forms, section.tags, person)) ||
+      selectPassiveVerbValue(forms, section.tags),
+  )
 
   return (
     <box width="100%" flexDirection="column" gap={1}>
@@ -119,8 +123,16 @@ function VerbInflections({ forms }: { forms: InflectionForm[] }) {
         <box width="100%" flexDirection="column" gap={1}>
           <VerbPolaritySection title="Present" tags={coreVerbSections[0].tags} forms={forms} />
           <VerbPolaritySection title="Simple Past" tags={coreVerbSections[1].tags} forms={forms} />
-          <VerbPolaritySection title="Present Perfect" tags={perfectVerbSections[0].tags} forms={forms} />
-          <VerbPolaritySection title="Past Perfect" tags={perfectVerbSections[1].tags} forms={forms} />
+          <VerbPolaritySection
+            title="Present Perfect"
+            tags={perfectVerbSections[0].tags}
+            forms={forms}
+          />
+          <VerbPolaritySection
+            title="Past Perfect"
+            tags={perfectVerbSections[1].tags}
+            forms={forms}
+          />
           <VerbSimpleSection title="Conditional" tags={conditionalVerbSection.tags} forms={forms} />
         </box>
       ) : (
@@ -165,19 +177,25 @@ function VerbPolaritySection({
           </text>
           <text width={verbPolarityColumnGap}> </text>
           <text width={verbPersonColumnWidth}>{person.pronoun}</text>
-          <text flexGrow={1}>{formatNegativeVerbValue(selectVerbValue(forms, tags, person, true))}</text>
+          <text flexGrow={1}>
+            {formatNegativeVerbValue(selectVerbValue(forms, tags, person, true))}
+          </text>
         </box>
       ))}
       <box flexDirection="row" width="100%">
         <text width={verbPersonColumnWidth}>
           <span fg={homeScreenTheme.mutedText}>passive</span>
         </text>
-        <text width={verbAffirmativeColumnWidth}>{formatAffirmativeVerbValue(title, selectPassiveVerbValue(forms, tags))}</text>
+        <text width={verbAffirmativeColumnWidth}>
+          {formatAffirmativeVerbValue(title, selectPassiveVerbValue(forms, tags))}
+        </text>
         <text width={verbPolarityColumnGap}> </text>
         <text width={verbPersonColumnWidth}>
           <span fg={homeScreenTheme.mutedText}>passive</span>
         </text>
-        <text flexGrow={1}>{formatNegativeVerbValue(selectPassiveVerbValue(forms, tags, true))}</text>
+        <text flexGrow={1}>
+          {formatNegativeVerbValue(selectPassiveVerbValue(forms, tags, true))}
+        </text>
       </box>
     </box>
   )
@@ -213,7 +231,9 @@ function VerbSimpleSection({
   )
 }
 
-function renderVerbPersonRows(renderRow: (person: (typeof verbPersons)[number]) => React.ReactNode) {
+function renderVerbPersonRows(
+  renderRow: (person: (typeof verbPersons)[number]) => React.ReactNode,
+) {
   return verbPersons.map((person) => renderRow(person))
 }
 
@@ -224,11 +244,21 @@ function CaseTable({ rows }: { rows: CaseTableRow[] }) {
   return (
     <box width="100%" flexDirection="column">
       <text>
-        <span fg={homeScreenTheme.mutedText}>{padNoTruncate("Case", caseColumnWidth)} {padNoTruncate("Singular", singularColumnWidth)} Plural</span>
+        <span fg={homeScreenTheme.mutedText}>
+          {padNoTruncate("Case", caseColumnWidth)} {padNoTruncate("Singular", singularColumnWidth)}{" "}
+          Plural
+        </span>
       </text>
-      {rows.map((row, index) => (
-        row === "spacer" ? <text key={`spacer:${index}`}> </text> : <text key={row.name}>{padNoTruncate(row.name, caseColumnWidth)} {padNoTruncate(row.singular, singularColumnWidth)} {row.plural}</text>
-      ))}
+      {rows.map((row, index) =>
+        row === "spacer" ? (
+          <text key={`spacer:${index}`}> </text>
+        ) : (
+          <text key={row.name}>
+            {padNoTruncate(row.name, caseColumnWidth)}{" "}
+            {padNoTruncate(row.singular, singularColumnWidth)} {row.plural}
+          </text>
+        ),
+      )}
     </box>
   )
 }
@@ -237,10 +267,12 @@ function OtherForms({ forms }: { forms: InflectionForm[] }) {
   return (
     <box width="100%" flexDirection="column">
       <text>
-        <span fg={homeScreenTheme.mutedText}>Form                         Value</span>
+        <span fg={homeScreenTheme.mutedText}>Form Value</span>
       </text>
       {forms.map((form) => (
-        <text key={`${form.label}:${form.value}`}>{pad(form.label, 28)} {form.value}</text>
+        <text key={`${form.label}:${form.value}`}>
+          {pad(form.label, 28)} {form.value}
+        </text>
       ))}
     </box>
   )
@@ -285,7 +317,11 @@ function hasCaseValue(row: CaseTableRow) {
   return row !== "spacer" && Boolean(row.singular || row.plural)
 }
 
-function selectCaseValue(forms: InflectionForm[], caseName: FinnishNominalCase, number: "singular" | "plural") {
+function selectCaseValue(
+  forms: InflectionForm[],
+  caseName: FinnishNominalCase,
+  number: "singular" | "plural",
+) {
   const matches = forms.filter((form) => form.case === caseName && form.number === number)
   const preferredMatch = matches.find((form) => !form.tags?.includes("accusative"))
 
@@ -298,33 +334,55 @@ function selectVerbValue(
   person: { person: "1" | "2" | "3"; number: "singular" | "plural" },
   negative = false,
 ) {
-  return uniqueValues(forms.filter((form) => {
-    const tags = form.tags ?? []
-    const formNumber = form.number ?? (tags.includes("plural") ? "plural" : tags.includes("singular") ? "singular" : undefined)
-    const formPerson = form.person ?? (tags.includes("first-person") ? "1" : tags.includes("second-person") ? "2" : tags.includes("third-person") ? "3" : undefined)
+  return uniqueValues(
+    forms
+      .filter((form) => {
+        const tags = form.tags ?? []
+        const formNumber =
+          form.number ??
+          (tags.includes("plural") ? "plural" : tags.includes("singular") ? "singular" : undefined)
+        const formPerson =
+          form.person ??
+          (tags.includes("first-person")
+            ? "1"
+            : tags.includes("second-person")
+              ? "2"
+              : tags.includes("third-person")
+                ? "3"
+                : undefined)
 
-    return (
-      formPerson === person.person &&
-      formNumber === person.number &&
-      requiredTags.every((tag) => tags.includes(tag)) &&
-      tags.includes("negative") === negative &&
-      !tags.includes("passive") &&
-      (requiredTags.includes("conditional") || tags.includes("indicative"))
-    )
-  }).map((form) => form.value)).join(" / ")
+        return (
+          formPerson === person.person &&
+          formNumber === person.number &&
+          requiredTags.every((tag) => tags.includes(tag)) &&
+          tags.includes("negative") === negative &&
+          !tags.includes("passive") &&
+          (requiredTags.includes("conditional") || tags.includes("indicative"))
+        )
+      })
+      .map((form) => form.value),
+  ).join(" / ")
 }
 
-function selectPassiveVerbValue(forms: InflectionForm[], requiredTags: readonly string[], negative = false) {
-  return uniqueValues(forms.filter((form) => {
-    const tags = form.tags ?? []
+function selectPassiveVerbValue(
+  forms: InflectionForm[],
+  requiredTags: readonly string[],
+  negative = false,
+) {
+  return uniqueValues(
+    forms
+      .filter((form) => {
+        const tags = form.tags ?? []
 
-    return (
-      requiredTags.every((tag) => tags.includes(tag)) &&
-      tags.includes("negative") === negative &&
-      tags.includes("passive") &&
-      tags.includes("indicative")
-    )
-  }).map((form) => form.value)).join(" / ")
+        return (
+          requiredTags.every((tag) => tags.includes(tag)) &&
+          tags.includes("negative") === negative &&
+          tags.includes("passive") &&
+          tags.includes("indicative")
+        )
+      })
+      .map((form) => form.value),
+  ).join(" / ")
 }
 
 function uniqueValues(values: string[]) {
@@ -346,7 +404,11 @@ function formatNegativeVerbValue(value: string) {
     return [pad(auxiliary, negativeAuxiliaryWidth), participle].join(" ")
   }
 
-  return [pad(auxiliary, negativeAuxiliaryWidth), pad(participle, negativeParticipleWidth), ...rest].join(" ")
+  return [
+    pad(auxiliary, negativeAuxiliaryWidth),
+    pad(participle, negativeParticipleWidth),
+    ...rest,
+  ].join(" ")
 }
 
 function formatAffirmativeVerbValue(title: string, value: string) {

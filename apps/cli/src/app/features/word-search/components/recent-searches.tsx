@@ -1,6 +1,6 @@
 import { useKeyboard } from "@opentui/react"
 import type { WiktionarySearchItem } from "@puhutko/shared"
-import { draculaColors, homeScreenTheme } from "../theme/colors"
+import { draculaColors, homeScreenTheme } from "../../../theme/colors"
 
 type RecentSearchesProps = {
   items: WiktionarySearchItem[]

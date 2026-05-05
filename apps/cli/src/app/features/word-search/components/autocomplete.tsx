@@ -1,8 +1,8 @@
 import { RenderableEvents, type InputRenderable } from "@opentui/core"
 import { useKeyboard } from "@opentui/react"
 import React from "react"
-import { draculaColors, homeScreenTheme } from "../theme/colors"
-import { useDebounce } from "../hooks/use-debounce"
+import { draculaColors, homeScreenTheme } from "../../../theme/colors"
+import { useDebounce } from "../../../hooks/use-debounce"
 
 type AutocompleteProps<T> = {
   value: string

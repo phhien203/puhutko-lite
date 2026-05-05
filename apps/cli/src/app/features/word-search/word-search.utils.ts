@@ -1,7 +1,6 @@
 import type { WiktionarySearchItem } from "@puhutko/shared"
-import type { FocusTarget } from "./home-screen.types"
-
-const RECENT_SEARCH_LIMIT = 100
+import { RECENT_SEARCH_LIMIT } from "./word-search.constants"
+import type { FocusTarget } from "./word-search.types"
 
 export function addRecentSearch(
   items: WiktionarySearchItem[],

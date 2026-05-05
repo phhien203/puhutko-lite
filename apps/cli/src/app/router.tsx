@@ -1,10 +1,11 @@
 import React from "react"
 import { createMemoryRouter } from "react-router"
+
+import { AboutScreen } from "./features/about-screen"
+import { SettingsScreen } from "./features/settings-screen"
+import { WordSearch } from "./features/word-search/word-search"
+import { NotFoundScreen } from "./not-found-screen"
 import { RootLayout } from "./root-layout"
-import { AboutScreen } from "../screens/about-screen"
-import { HomeScreen } from "../screens/home-screen"
-import { NotFoundScreen } from "../screens/not-found-screen"
-import { SettingsScreen } from "../screens/settings-screen"
 
 export type AppRouteMeta = {
   path: `/${string}`
@@ -18,20 +19,20 @@ export const routes: AppRouteMeta[] = [
     path: "/",
     label: "Home",
     shortcut: "h",
-    element: <HomeScreen />
+    element: <WordSearch />,
   },
   {
     path: "/about",
     label: "About",
     shortcut: "a",
-    element: <AboutScreen />
+    element: <AboutScreen />,
   },
   {
     path: "/settings",
     label: "Settings",
     shortcut: "s",
-    element: <SettingsScreen />
-  }
+    element: <SettingsScreen />,
+  },
 ]
 
 export const router = createMemoryRouter([
@@ -42,12 +43,12 @@ export const router = createMemoryRouter([
       ...routes.map((route) => ({
         index: route.path === "/" ? true : undefined,
         path: route.path === "/" ? undefined : route.path.slice(1),
-        element: route.element
+        element: route.element,
       })),
       {
         path: "*",
-        element: <NotFoundScreen />
-      }
-    ]
-  }
+        element: <NotFoundScreen />,
+      },
+    ],
+  },
 ])

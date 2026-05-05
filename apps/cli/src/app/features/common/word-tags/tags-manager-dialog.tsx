@@ -1,9 +1,10 @@
-import { findNextJumpMatch, getCircularIndex, type TagWithAssignment } from "@puhutko/word-tags"
+import React from "react"
+
 import { useDialog, useDialogKeyboard } from "@opentui-ui/dialog/react"
 import type { WordDetail } from "@puhutko/shared"
-import React from "react"
-import { useWordTags } from "../../features/word-tags/word-tags-provider"
-import { draculaColors, homeScreenTheme } from "../../theme/colors"
+import { findNextJumpMatch, getCircularIndex, type TagWithAssignment } from "@puhutko/word-tags"
+import { useWordTags } from "../../../providers/word-tags-provider"
+import { draculaColors, homeScreenTheme } from "../../../theme/colors"
 import { DeleteTagDialog } from "./delete-tag-dialog"
 import { TagNameDialog } from "./tag-name-dialog"
 
@@ -59,13 +60,19 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
     selectedIndexRef.current = selectedIndex
   }, [selectedIndex])
 
-  const syncSelection = React.useCallback((nextTags: TagWithAssignment[], nextSelectedIndex: number) => {
-    const safeSelectedIndex = nextTags.length === 0 ? 0 : Math.max(0, Math.min(nextSelectedIndex, nextTags.length - 1))
+  const syncSelection = React.useCallback(
+    (nextTags: TagWithAssignment[], nextSelectedIndex: number) => {
+      const safeSelectedIndex =
+        nextTags.length === 0 ? 0 : Math.max(0, Math.min(nextSelectedIndex, nextTags.length - 1))
 
-    setTags(nextTags)
-    setSelectedIndex(safeSelectedIndex)
-    setScrollOffset((currentOffset) => getVisibleScrollOffset(currentOffset, safeSelectedIndex, nextTags.length))
-  }, [])
+      setTags(nextTags)
+      setSelectedIndex(safeSelectedIndex)
+      setScrollOffset((currentOffset) =>
+        getVisibleScrollOffset(currentOffset, safeSelectedIndex, nextTags.length),
+      )
+    },
+    [],
+  )
 
   const reloadTags = React.useCallback(
     async (options?: { preferredTagId?: string; fallbackIndex?: number }) => {
@@ -76,7 +83,9 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
         const nextTags = await listTagsForWord(detail.id)
         const fallbackIndex = options?.fallbackIndex ?? selectedIndexRef.current
         const preferredTagId = options?.preferredTagId
-        const preferredIndex = preferredTagId ? nextTags.findIndex((item) => item.tag.id === preferredTagId) : -1
+        const preferredIndex = preferredTagId
+          ? nextTags.findIndex((item) => item.tag.id === preferredTagId)
+          : -1
         const nextSelectedIndex = preferredIndex >= 0 ? preferredIndex : fallbackIndex
 
         syncSelection(nextTags, nextSelectedIndex)
@@ -104,7 +113,9 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
 
       setSelectedIndex((currentIndex) => {
         const nextIndex = getCircularIndex(currentIndex, delta, tags.length)
-        setScrollOffset((currentOffset) => getVisibleScrollOffset(currentOffset, nextIndex, tags.length))
+        setScrollOffset((currentOffset) =>
+          getVisibleScrollOffset(currentOffset, nextIndex, tags.length),
+        )
         return nextIndex
       })
     },
@@ -118,7 +129,9 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
 
     setErrorMessage(null)
     setTags((currentTags) =>
-      currentTags.map((item, index) => (index === selectedIndex ? { ...item, assigned: !item.assigned } : item)),
+      currentTags.map((item, index) =>
+        index === selectedIndex ? { ...item, assigned: !item.assigned } : item,
+      ),
     )
 
     try {
@@ -209,70 +222,69 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
     }
   }, [deleteTag, dialog, reloadTags, selectedIndex, selectedTag])
 
-  useDialogKeyboard(
-    (key) => {
-      if (key.name === "escape") {
-        dismiss()
-        return
-      }
+  useDialogKeyboard((key) => {
+    if (key.name === "escape") {
+      dismiss()
+      return
+    }
 
-      if (key.ctrl && key.name === "n") {
-        void handleCreateTag()
-        return
-      }
+    if (key.ctrl && key.name === "n") {
+      void handleCreateTag()
+      return
+    }
 
-      if (isLoading) {
-        return
-      }
+    if (isLoading) {
+      return
+    }
 
-      if (key.ctrl && key.name === "r") {
-        void handleRenameTag()
-        return
-      }
+    if (key.ctrl && key.name === "r") {
+      void handleRenameTag()
+      return
+    }
 
-      if (key.ctrl && key.name === "d") {
-        void handleDeleteTag()
-        return
-      }
+    if (key.ctrl && key.name === "d") {
+      void handleDeleteTag()
+      return
+    }
 
-      if (key.name === "up") {
-        moveSelection(-1)
-        return
-      }
+    if (key.name === "up") {
+      moveSelection(-1)
+      return
+    }
 
-      if (key.name === "down") {
-        moveSelection(1)
-        return
-      }
+    if (key.name === "down") {
+      moveSelection(1)
+      return
+    }
 
-      if (key.name === "space") {
-        void handleToggleAssignment()
-        return
-      }
+    if (key.name === "space") {
+      void handleToggleAssignment()
+      return
+    }
 
-      if (key.ctrl || key.meta || key.option) {
-        return
-      }
+    if (key.ctrl || key.meta || key.option) {
+      return
+    }
 
-      const typedCharacter = getPrintableCharacter(key.name, key.sequence)
+    const typedCharacter = getPrintableCharacter(key.name, key.sequence)
 
-      if (typedCharacter.length !== 1 || tags.length === 0) {
-        return
-      }
+    if (typedCharacter.length !== 1 || tags.length === 0) {
+      return
+    }
 
-      const nextIndex = findNextJumpMatch(
-        tags.map((item) => item.tag),
-        selectedIndex,
-        typedCharacter,
+    const nextIndex = findNextJumpMatch(
+      tags.map((item) => item.tag),
+      selectedIndex,
+      typedCharacter,
+    )
+
+    if (nextIndex !== selectedIndex) {
+      setSelectedIndex(nextIndex)
+      setScrollOffset((currentOffset) =>
+        getVisibleScrollOffset(currentOffset, nextIndex, tags.length),
       )
-
-      if (nextIndex !== selectedIndex) {
-        setSelectedIndex(nextIndex)
-        setScrollOffset((currentOffset) => getVisibleScrollOffset(currentOffset, nextIndex, tags.length))
-      }
-    },
-    dialogId,
-  )
+    }
+  }, dialogId)
 
   return (
     <box width="100%" flexDirection="column" gap={1}>
@@ -284,7 +296,7 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
 
       <text>
         <span fg={homeScreenTheme.mutedText}>
-          ↑/↓ Select  Space Toggle  Ctrl+n New  Ctrl+r Rename  Ctrl+d Delete  Esc Close
+          ↑/↓ Select Space Toggle Ctrl+n New Ctrl+r Rename Ctrl+d Delete Esc Close
         </span>
       </text>
 
@@ -308,7 +320,9 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
           padding={1}
         >
           <text>
-            <span fg={homeScreenTheme.mutedText}>No tags yet. Press Ctrl+n to create the first tag.</span>
+            <span fg={homeScreenTheme.mutedText}>
+              No tags yet. Press Ctrl+n to create the first tag.
+            </span>
           </text>
         </box>
       ) : (
@@ -324,10 +338,16 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
             const isSelected = tagIndex === selectedIndex
 
             return (
-              <box key={item.tag.id} width="100%" paddingX={1} backgroundColor={isSelected ? draculaColors.currentLine : undefined}>
+              <box
+                key={item.tag.id}
+                width="100%"
+                paddingX={1}
+                backgroundColor={isSelected ? draculaColors.currentLine : undefined}
+              >
                 <text>
-                  <span fg={item.assigned ? draculaColors.green : homeScreenTheme.mutedText}>{item.assigned ? "[✔︎]" : "[ ]"}</span>
-                  {" "}
+                  <span fg={item.assigned ? draculaColors.green : homeScreenTheme.mutedText}>
+                    {item.assigned ? "[✔︎]" : "[ ]"}
+                  </span>{" "}
                   <strong>{item.tag.name}</strong>
                 </text>
               </box>
@@ -339,7 +359,8 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
       {tags.length > 0 ? (
         <text>
           <span fg={homeScreenTheme.mutedText}>
-            Showing {scrollOffset + 1}-{Math.min(scrollOffset + VISIBLE_ROW_COUNT, tags.length)} of {tags.length}
+            Showing {scrollOffset + 1}-{Math.min(scrollOffset + VISIBLE_ROW_COUNT, tags.length)} of{" "}
+            {tags.length}
           </span>
         </text>
       ) : null}

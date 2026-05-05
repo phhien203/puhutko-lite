@@ -1,5 +1,5 @@
 import type { ConsonantGradation } from "@puhutko/shared"
-import { homeScreenTheme } from "../../theme/colors"
+import { homeScreenTheme } from "../../../theme/colors"
 
 type SplitGrade = {
   value: string
@@ -47,7 +47,7 @@ function HighlightedGradationAsciiFont({
 
   return (
     <box flexDirection="row">
-      {parts.map((part, index) => (
+      {parts.map((part, index) =>
         part.value ? (
           <ascii-font
             key={`${index}:${part.value}`}
@@ -55,8 +55,8 @@ function HighlightedGradationAsciiFont({
             font="block"
             color={part.highlight ? getHighlightColor(part.highlightType) : defaultAsciiFontColor}
           />
-        ) : null
-      ))}
+        ) : null,
+      )}
     </box>
   )
 }
@@ -69,19 +69,22 @@ function HighlightedGradationText({
   gradation?: ConsonantGradation
 }) {
   const parts = splitStrongGrade(word, gradation)
-  const gradationInfo = gradation?.strong && gradation?.weak
-    ? gradation.strongStart !== undefined
-      ? ` (${gradation.strong} -> ${gradation.weak})`
-      : gradation.weakStart !== undefined
-        ? ` (${gradation.strong} <- ${gradation.weak})`
-        : ""
-    : ""
+  const gradationInfo =
+    gradation?.strong && gradation?.weak
+      ? gradation.strongStart !== undefined
+        ? ` (${gradation.strong} -> ${gradation.weak})`
+        : gradation.weakStart !== undefined
+          ? ` (${gradation.strong} <- ${gradation.weak})`
+          : ""
+      : ""
 
   return (
     <box flexDirection="row" width="100%">
       {parts.map((part, index) => (
         <text key={`${index}:${part.value}`}>
-          <span fg={part.highlight ? getHighlightColor(part.highlightType) : undefined}>{part.value}</span>
+          <span fg={part.highlight ? getHighlightColor(part.highlightType) : undefined}>
+            {part.value}
+          </span>
         </text>
       ))}
       {gradationInfo ? (

@@ -1,8 +1,9 @@
+import React from "react"
+
 import { getFinnishWordDetail } from "@puhutko/kaikki"
 import type { WiktionarySearchItem, WordDetail } from "@puhutko/shared"
-import React from "react"
-import { draculaColors, homeScreenTheme } from "../theme/colors"
-import { WordDetailView } from "./word-detail"
+import { draculaColors, homeScreenTheme } from "../../theme/colors"
+import { WordDetailView } from "./word-detail/word-detail"
 
 type TagsManagerDialogWord = Pick<WordDetail, "id" | "word">
 
@@ -109,7 +110,9 @@ export function DetailsView({ item, focused = false, onDetailChange }: DetailsVi
             ) : null
           ) : (
             <text>
-              <span fg={homeScreenTheme.mutedText}>Select a Wiktionary result to inspect it here.</span>
+              <span fg={homeScreenTheme.mutedText}>
+                Select a Wiktionary result to inspect it here.
+              </span>
             </text>
           )}
         </box>

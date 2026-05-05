@@ -1,9 +1,10 @@
 import type { WordDetail } from "@puhutko/shared"
 import React from "react"
-import { useWordTags } from "../../features/word-tags/word-tags-provider"
-import { homeScreenTheme } from "../../theme/colors"
+
+import { useWordTags } from "../../../providers/word-tags-provider"
 import { GradationHeader } from "./gradation"
 import { InflectionTable } from "./inflection-table"
+import { homeScreenTheme } from "../../../theme/colors"
 
 type WordDetailProps = {
   detail: WordDetail | null
@@ -69,7 +70,11 @@ export function WordDetailView({ detail, focused = false }: WordDetailProps) {
           </text>
 
           <text>
-            {assignedTagNames.length > 0 ? assignedTagNames.join(", ") : <span fg={homeScreenTheme.mutedText}>No tags yet.</span>}
+            {assignedTagNames.length > 0 ? (
+              assignedTagNames.join(", ")
+            ) : (
+              <span fg={homeScreenTheme.mutedText}>No tags yet.</span>
+            )}
           </text>
         </box>
       </box>
@@ -92,7 +97,9 @@ export function WordDetailView({ detail, focused = false }: WordDetailProps) {
           </text>
 
           {group.meanings.map((meaning, index) => (
-            <text key={`${detail.id}:${group.partOfSpeech}:${index}`}>{index + 1}. {meaning}</text>
+            <text key={`${detail.id}:${group.partOfSpeech}:${index}`}>
+              {index + 1}. {meaning}
+            </text>
           ))}
         </box>
       ))}

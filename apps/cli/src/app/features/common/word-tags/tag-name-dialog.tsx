@@ -1,7 +1,8 @@
-import { MAX_TAG_NAME_LENGTH, type Tag } from "@puhutko/word-tags"
-import { useDialogKeyboard } from "@opentui-ui/dialog/react"
 import React from "react"
-import { draculaColors, homeScreenTheme } from "../../theme/colors"
+
+import { useDialogKeyboard } from "@opentui-ui/dialog/react"
+import { MAX_TAG_NAME_LENGTH, type Tag } from "@puhutko/word-tags"
+import { draculaColors, homeScreenTheme } from "../../../theme/colors"
 
 type TagNameDialogProps = {
   dialogId: string | number
@@ -45,19 +46,16 @@ export function TagNameDialog({
     }
   }, [isSubmitting, resolve, submit, value])
 
-  useDialogKeyboard(
-    (key) => {
-      if (key.name === "escape") {
-        dismiss()
-        return
-      }
+  useDialogKeyboard((key) => {
+    if (key.name === "escape") {
+      dismiss()
+      return
+    }
 
-      if (key.name === "enter" || key.name === "return") {
-        void handleSubmit()
-      }
-    },
-    dialogId,
-  )
+    if (key.name === "enter" || key.name === "return") {
+      void handleSubmit()
+    }
+  }, dialogId)
 
   return (
     <box width="100%" flexDirection="column" gap={1}>

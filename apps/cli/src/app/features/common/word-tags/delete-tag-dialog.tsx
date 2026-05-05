@@ -1,6 +1,7 @@
-import { useDialogKeyboard } from "@opentui-ui/dialog/react"
 import React from "react"
-import { draculaColors, homeScreenTheme } from "../../theme/colors"
+
+import { useDialogKeyboard } from "@opentui-ui/dialog/react"
+import { draculaColors, homeScreenTheme } from "../../../theme/colors"
 
 type DeleteTagDialogProps = {
   dialogId: string | number
@@ -12,24 +13,21 @@ type DeleteTagDialogProps = {
 export function DeleteTagDialog({ dialogId, tagName, resolve, dismiss }: DeleteTagDialogProps) {
   const [selectedAction, setSelectedAction] = React.useState<"cancel" | "delete">("cancel")
 
-  useDialogKeyboard(
-    (key) => {
-      if (key.name === "escape") {
-        dismiss()
-        return
-      }
+  useDialogKeyboard((key) => {
+    if (key.name === "escape") {
+      dismiss()
+      return
+    }
 
-      if (key.name === "tab" || key.name === "left" || key.name === "right") {
-        setSelectedAction((currentAction) => (currentAction === "cancel" ? "delete" : "cancel"))
-        return
-      }
+    if (key.name === "tab" || key.name === "left" || key.name === "right") {
+      setSelectedAction((currentAction) => (currentAction === "cancel" ? "delete" : "cancel"))
+      return
+    }
 
-      if (key.name === "enter" || key.name === "return") {
-        resolve(selectedAction === "delete")
-      }
-    },
-    dialogId,
-  )
+    if (key.name === "enter" || key.name === "return") {
+      resolve(selectedAction === "delete")
+    }
+  }, dialogId)
 
   return (
     <box width="100%" flexDirection="column" gap={1}>
@@ -66,7 +64,7 @@ export function DeleteTagDialog({ dialogId, tagName, resolve, dismiss }: DeleteT
       <text>
         <span fg={homeScreenTheme.mutedText}>Tab/Left/Right Switch</span>
         {"  "}
-        Enter Confirm  Esc Cancel
+        Enter Confirm Esc Cancel
       </text>
     </box>
   )

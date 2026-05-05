@@ -2,8 +2,8 @@ import { useDialogState } from "@opentui-ui/dialog/react"
 import { useKeyboard, useRenderer } from "@opentui/react"
 import React from "react"
 import { Outlet, useLocation, useNavigate } from "react-router"
+import { draculaColors } from "./theme/colors"
 import type { AppRouteMeta } from "./router"
-import { draculaColors } from "../theme/colors"
 
 type RootLayoutProps = {
   routes: AppRouteMeta[]
