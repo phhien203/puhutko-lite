@@ -1,6 +1,7 @@
 import { RenderableEvents, type InputRenderable } from "@opentui/core"
 import { useKeyboard } from "@opentui/react"
 import React from "react"
+import { homeScreenTheme } from "../theme/colors"
 import { useDebounce } from "../hooks/use-debounce"
 
 type AutocompleteProps<T> = {
@@ -293,7 +294,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
 
   return (
     <box width="100%" position="relative" zIndex={isOpen ? 100 : 0}>
-      <box border borderStyle="rounded" paddingX={1} paddingY={1} alignItems="center">
+      <box paddingX={1} paddingY={1} alignItems="center">
         <input
           ref={inputRef}
           width="100%"
@@ -307,7 +308,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
         />
         {isLoading ? (
           <text position="absolute" right={0}>
-            <span fg="green">•</span>
+            <span fg={homeScreenTheme.autocompleteLoading}>• </span>
           </text>
         ) : null}
       </box>
@@ -315,20 +316,20 @@ export function Autocomplete<T extends { label: string; value: string }>({
       {isOpen && visibleItems.length > 0 ? (
         <box
           position="absolute"
-          top={5}
+          top={3}
           left={0}
           right={0}
           zIndex={200}
-          backgroundColor="black"
-          border
-          borderStyle="rounded"
+          backgroundColor={homeScreenTheme.autocompleteMenuBackground}
           flexDirection="column"
         >
           {visibleItems.map((item, index) => {
             const description = getItemDescription?.(item)
             const isHighlighted = index === highlightedIndex
-            const bg = isHighlighted ? "green" : "black"
-            const fg = isHighlighted ? "black" : undefined
+            const bg = isHighlighted
+              ? homeScreenTheme.autocompleteItemHighlightedBackground
+              : homeScreenTheme.autocompleteMenuBackground
+            const fg = isHighlighted ? homeScreenTheme.autocompleteItemHighlightedForeground : undefined
 
             return (
               <box
@@ -345,7 +346,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
                   </text>
                 {description ? (
                   <text>
-                    <span bg={bg} fg={fg ?? "gray"}>
+                    <span bg={bg} fg={fg ?? homeScreenTheme.mutedText}>
                       {description}
                     </span>
                   </text>

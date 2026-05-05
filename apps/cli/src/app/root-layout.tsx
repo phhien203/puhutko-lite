@@ -35,7 +35,7 @@ export function RootLayout({ routes }: RootLayoutProps) {
 
   return (
     <box width="100%" height="100%" flexDirection="column" padding={1} gap={1}>
-      <box border borderStyle="rounded" paddingX={1} paddingY={0}>
+      <box paddingX={1} paddingY={0}>
         <text>
           <strong>puhutko-lite</strong>
           {"  "}
@@ -45,11 +45,11 @@ export function RootLayout({ routes }: RootLayoutProps) {
         </text>
       </box>
 
-      <box border borderStyle="rounded" padding={1} flexGrow={1} minHeight={0}>
+      <box padding={0} flexGrow={1} minHeight={0}>
         <Outlet context={{ setAutocompleteActive: setIsAutocompleteActive }} />
       </box>
 
-      <box border borderStyle="rounded" paddingX={1} paddingY={0}>
+      <box paddingX={0} paddingY={0}>
         <text>
           {footerHints}  <strong>[b]</strong> Sidebar <strong>[Tab]</strong> Next <strong>[q]</strong> Quit <strong>[Esc]</strong> Quit
         </text>

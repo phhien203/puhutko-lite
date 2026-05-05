@@ -1,60 +1,58 @@
-type DetailsViewItem = {
-  label: string
-  value: string
-  description?: string
-  url?: string
-}
+import type { WiktionarySearchItem } from "@puhutko/shared"
+import { homeScreenTheme } from "../theme/colors"
 
 type DetailsViewProps = {
-  item: DetailsViewItem | null
+  item: WiktionarySearchItem | null
   focused?: boolean
 }
 
 export function DetailsView({ item, focused = false }: DetailsViewProps) {
-  const borderColor = focused ? "green" : "gray"
-  const backgroundColor = focused ? "#112211" : undefined
-
   return (
     <box
       width="100%"
       height="100%"
-      border
-      borderStyle="rounded"
-      borderColor={borderColor}
-      backgroundColor={backgroundColor}
       flexDirection="column"
       padding={1}
-      gap={1}
       minHeight={0}
     >
-      <text>
-        <strong>Details</strong>
-      </text>
-
-      {item ? (
-        <>
+      <box width="100%" height="100%" flexDirection="column" gap={1} minHeight={0}>
+        <box padding={1}>
           <text>
-            <strong>{item.label}</strong>
+            <strong>Details</strong>
           </text>
-          <text>{item.value}</text>
+        </box>
 
-          {item.description ? (
-            <text>
-              <span fg="gray">{item.description}</span>
-            </text>
-          ) : null}
+        <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focused}>
+          <box width="100%" flexDirection="column" gap={1} padding={1}>
+            {item ? (
+              <>
+                <text>
+                  <strong>{item.label}</strong>
+                </text>
+                <text>
+                  {item.value}
+                </text>
 
-          {item.url ? (
-            <text>
-              <span fg="cyan">{item.url}</span>
-            </text>
-          ) : null}
-        </>
-      ) : (
-        <text>
-          <span fg="gray">Select a Wiktionary result to inspect it here.</span>
-        </text>
-      )}
+                {item.description ? (
+                  <text>
+                    <span fg={homeScreenTheme.mutedText}>{item.description}</span>
+                  </text>
+                ) : null}
+
+                {item.url ? (
+                  <text>
+                    <span fg={homeScreenTheme.linkText}>{item.url}</span>
+                  </text>
+                ) : null}
+              </>
+            ) : (
+              <text>
+                <span fg={homeScreenTheme.mutedText}>Select a Wiktionary result to inspect it here.</span>
+              </text>
+            )}
+          </box>
+        </scrollbox>
+      </box>
     </box>
   )
 }

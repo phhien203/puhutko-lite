@@ -1,4 +1,4 @@
-import React from "react"
+import { homeScreenTheme } from "../theme/colors"
 
 type RecentSearchesProps = {
   items: string[]
@@ -6,16 +6,12 @@ type RecentSearchesProps = {
 }
 
 export function RecentSearches({ items, focused = false }: RecentSearchesProps) {
-  const borderColor = focused ? "green" : "gray"
-  const backgroundColor = focused ? "#112211" : undefined
+  const backgroundColor = focused ? homeScreenTheme.panelFocusedBackground : undefined
 
   return (
     <box
       width="100%"
       height="100%"
-      border
-      borderStyle="rounded"
-      borderColor={borderColor}
       backgroundColor={backgroundColor}
       flexDirection="column"
       padding={1}
@@ -30,7 +26,7 @@ export function RecentSearches({ items, focused = false }: RecentSearchesProps) 
         <box width="100%" flexDirection="column">
           {items.map((item, index) => (
             <text key={`${item}-${index}`}>
-              <span fg={focused ? "white" : undefined}>{item}</span>
+              <span fg={focused ? homeScreenTheme.recentSearchFocusedForeground : undefined}>{item}</span>
             </text>
           ))}
         </box>
