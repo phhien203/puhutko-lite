@@ -24,7 +24,7 @@ export function RootLayout({ routes }: RootLayoutProps) {
       return
     }
 
-    if (key.name === "q" || key.name === "escape") {
+    if (key.name === "q") {
       renderer.destroy()
       return
     }
@@ -52,7 +52,7 @@ export function RootLayout({ routes }: RootLayoutProps) {
       <box flexShrink={0} paddingX={2} paddingY={1} backgroundColor={draculaColors.background}>
         <text>
           {footerHints}
-          {"   "}[b] Sidebar{"   "}[Tab] Next{"   "}[q] Quit{"   "}[Esc] Quit
+          {"   "}[b] Sidebar{"   "}[Tab] Next{"   "}[q] Quit
         </text>
       </box>
     </box>
