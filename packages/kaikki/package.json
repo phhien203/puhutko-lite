@@ -1,0 +1,19 @@
+{
+  "name": "@puhutko/kaikki",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "check": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@puhutko/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.13",
+    "typescript": "6.0.3"
+  }
+}

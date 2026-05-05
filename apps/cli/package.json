@@ -10,6 +10,7 @@
   "dependencies": {
     "@opentui/core": "0.2.2",
     "@opentui/react": "0.2.2",
+    "@puhutko/kaikki": "workspace:*",
     "@puhutko/shared": "workspace:*",
     "@puhutko/wiktionary": "workspace:*",
     "react": "19.2.5",
