@@ -7,6 +7,7 @@ type AutocompleteProps<T> = {
   value: string
   onChange: (value: string) => void
   onSelect: (item: T) => void
+  focused?: boolean
   loaderFn: (query: string, signal: AbortSignal) => Promise<T[]>
   createItemFromValue?: (value: string) => T
   getItemDescription?: (item: T) => string | undefined
@@ -22,6 +23,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
   value,
   onChange,
   onSelect,
+  focused,
   loaderFn,
   createItemFromValue,
   getItemDescription,
@@ -107,6 +109,12 @@ export function Autocomplete<T extends { label: string; value: string }>({
   }, [isFocused])
 
   React.useEffect(() => {
+    if (focused !== undefined) {
+      setShouldFocusInput(focused)
+    }
+  }, [focused])
+
+  React.useEffect(() => {
     if (shouldFocusInput) {
       inputRef.current?.focus()
     }
@@ -151,7 +159,10 @@ export function Autocomplete<T extends { label: string; value: string }>({
     }
 
     const handleFocused = () => {
-      setShouldFocusInput(true)
+      if (focused === undefined) {
+        setShouldFocusInput(true)
+      }
+
       setIsFocused(true)
 
       if (itemsRef.current.length > 0 && !wasDismissedByEscapeRef.current) {
@@ -160,7 +171,10 @@ export function Autocomplete<T extends { label: string; value: string }>({
     }
 
     const handleBlurred = () => {
-      setShouldFocusInput(false)
+      if (focused === undefined) {
+        setShouldFocusInput(false)
+      }
+
       setIsFocused(false)
       setIsOpen(false)
       setHighlightedIndex(null)
@@ -174,7 +188,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
       input.off(RenderableEvents.FOCUSED, handleFocused)
       input.off(RenderableEvents.BLURRED, handleBlurred)
     }
-  }, [])
+  }, [focused])
 
   React.useEffect(() => {
     return () => {
@@ -279,7 +293,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
 
   return (
     <box width="100%" position="relative" zIndex={isOpen ? 100 : 0}>
-      <box border borderStyle="rounded" paddingX={1} paddingY={0} alignItems="center">
+      <box border borderStyle="rounded" paddingX={1} paddingY={1} alignItems="center">
         <input
           ref={inputRef}
           width="100%"
@@ -301,7 +315,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
       {isOpen && visibleItems.length > 0 ? (
         <box
           position="absolute"
-          top={3}
+          top={5}
           left={0}
           right={0}
           zIndex={200}

@@ -51,7 +51,7 @@ export function RootLayout({ routes }: RootLayoutProps) {
 
       <box border borderStyle="rounded" paddingX={1} paddingY={0}>
         <text>
-          {footerHints}  <strong>[q]</strong> Quit <strong>[Esc]</strong> Quit
+          {footerHints}  <strong>[b]</strong> Sidebar <strong>[Tab]</strong> Next <strong>[q]</strong> Quit <strong>[Esc]</strong> Quit
         </text>
       </box>
     </box>
