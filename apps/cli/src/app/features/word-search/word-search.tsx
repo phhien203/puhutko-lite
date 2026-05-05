@@ -6,7 +6,9 @@ import { useOutletContext } from "react-router"
 import type { WiktionarySearchItem } from "@puhutko/shared"
 import { searchFinnishWiktionaryEntries } from "@puhutko/wiktionary"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
+import { useWordExample } from "../../providers/word-example-provider"
 import { DetailsView } from "../common/details-view"
+import { WordExampleDialog } from "../common/word-example/word-example-dialog"
 import { TagsManagerDialog } from "../common/word-tags/tags-manager-dialog"
 import { Autocomplete } from "./components/autocomplete"
 import { RecentSearches } from "./components/recent-searches"
@@ -17,6 +19,7 @@ import { addRecentSearch } from "./word-search.utils"
 
 export function WordSearch() {
   const dialog = useDialog()
+  const { getWordExample } = useWordExample()
   const { setAutocompleteActive } = useOutletContext<WordSearchOutletContext>()
   const { width } = useTerminalDimensions()
   const isDialogOpen = useDialogState((state) => state.isOpen)
@@ -123,6 +126,36 @@ export function WordSearch() {
       return
     }
 
+    if (key.ctrl && key.name === "e") {
+      if (!selectedDetail) {
+        return
+      }
+
+      void (async () => {
+        try {
+          const wordExample = await getWordExample(selectedDetail.id)
+
+          await dialog.prompt({
+            size: "large",
+            content: (context) => (
+              <WordExampleDialog
+                dialogId={context.dialogId}
+                wordId={selectedDetail.id}
+                word={selectedDetail.word}
+                initialValue={wordExample?.text ?? ""}
+                resolve={context.resolve}
+                dismiss={context.dismiss}
+              />
+            ),
+          })
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Failed to load example.")
+        }
+      })()
+
+      return
+    }
+
     if (key.name === "tab") {
       dispatch({ type: "focus/next", backwards: key.shift, isNarrowTerminal })
       return
@@ -134,9 +167,9 @@ export function WordSearch() {
   })
 
   return (
-    <box width="100%" height="100%" flexDirection={isSidebarVisible ? "row" : "column"} gap={1}>
+    <box width="100%" height="100%" flexDirection={isSidebarVisible ? "row" : "column"} gap={2}>
       {isSidebarVisible ? (
-        <box width={SIDEBAR_WIDTH} flexDirection="column" gap={0} minHeight={0}>
+        <box width={SIDEBAR_WIDTH} flexDirection="column" gap={1} minHeight={0}>
           <box
             backgroundColor={
               autocompleteFocused ? draculaColors.currentLine : draculaColors.background

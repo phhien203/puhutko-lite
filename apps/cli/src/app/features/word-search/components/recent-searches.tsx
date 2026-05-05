@@ -52,11 +52,11 @@ export function RecentSearches({
       height="100%"
       backgroundColor={backgroundColor}
       flexDirection="column"
-      padding={1}
-      gap={1}
+      padding={0}
+      gap={0}
       minHeight={0}
     >
-      <text>
+      <text marginX={2} marginY={1}>
         <strong>Recent searches</strong>
       </text>
 
@@ -66,6 +66,7 @@ export function RecentSearches({
             <box
               key={item.value}
               width="100%"
+              paddingX={2}
               backgroundColor={
                 index === selectedIndex
                   ? homeScreenTheme.autocompleteItemHighlightedBackground

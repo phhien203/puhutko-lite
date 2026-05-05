@@ -1,13 +1,16 @@
 export const draculaColors = {
   background: "#22212C",
   background2: "#212C2A",
+  background3: "#2C2A21",
   currentLine: "#454158",
   foreground: "#F8F8F2",
   comment: "#7970A9",
+  purple: "#9580FF",
   cyan: "#80FFEA",
   green: "#8AFF80",
   pink: "#FF80BF",
   red: "#FF9580",
+  yellow: "#FFFF80",
 } as const
 
 export const homeScreenTheme = {
@@ -16,7 +19,7 @@ export const homeScreenTheme = {
   panelFocusedBorder: draculaColors.foreground,
   autocompleteLoading: draculaColors.green,
   autocompleteMenuBackground: draculaColors.currentLine,
-  autocompleteItemHighlightedBackground: draculaColors.pink,
+  autocompleteItemHighlightedBackground: draculaColors.purple,
   autocompleteItemHighlightedForeground: draculaColors.foreground,
   recentSearchFocusedForeground: draculaColors.foreground,
   mutedText: draculaColors.comment,

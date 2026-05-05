@@ -147,7 +147,6 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
 
   const handleCreateTag = React.useCallback(async () => {
     const createdTagId = await dialog.prompt<string>({
-      backdropOpacity: "50%",
       content: (context) => (
         <TagNameDialog
           dialogId={context.dialogId}
@@ -173,7 +172,6 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
     }
 
     const renamedTagId = await dialog.prompt<string>({
-      backdropOpacity: "50%",
       content: (context) => (
         <TagNameDialog
           dialogId={context.dialogId}
@@ -287,16 +285,16 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
   }, dialogId)
 
   return (
-    <box width="100%" flexDirection="column" gap={1}>
+    <box width="100%" flexDirection="column" gap={1} paddingX={2} paddingTop={1}>
       <text>
-        <strong>Tags</strong>
+        <strong>Manage tags for</strong>
         {"  "}
-        <span fg={homeScreenTheme.mutedText}>{detail.word}</span>
+        <span>{detail.word}</span>
       </text>
 
       <text>
         <span fg={homeScreenTheme.mutedText}>
-          ↑/↓ Select Space Toggle Ctrl+n New Ctrl+r Rename Ctrl+d Delete Esc Close
+          [Space] Toggle{"   "}Ctrl+n New{"   "}Ctrl+r Rename{"   "}Ctrl+d Delete
         </span>
       </text>
 
@@ -315,7 +313,6 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
           width="100%"
           flexDirection="column"
           border
-          borderStyle="rounded"
           borderColor={draculaColors.comment}
           padding={1}
         >
@@ -342,13 +339,10 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
                 key={item.tag.id}
                 width="100%"
                 paddingX={1}
-                backgroundColor={isSelected ? draculaColors.currentLine : undefined}
+                backgroundColor={isSelected ? draculaColors.purple : undefined}
               >
                 <text>
-                  <span fg={item.assigned ? draculaColors.green : homeScreenTheme.mutedText}>
-                    {item.assigned ? "[✔︎]" : "[ ]"}
-                  </span>{" "}
-                  <strong>{item.tag.name}</strong>
+                  <strong>{item.assigned ? "[✔︎]" : "[ ]"}</strong> <span>{item.tag.name}</span>
                 </text>
               </box>
             )

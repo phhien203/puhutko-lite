@@ -71,12 +71,12 @@ export function DetailsView({ item, focused = false, onDetailChange }: DetailsVi
       width="100%"
       height="100%"
       flexDirection="column"
-      padding={0}
+      paddingX={2}
       minHeight={0}
       backgroundColor={focused ? draculaColors.currentLine : draculaColors.background}
     >
       <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focused}>
-        <box width="100%" flexDirection="column" gap={1} padding={0}>
+        <box width="100%" flexDirection="column" gap={0} padding={0}>
           {item ? (
             status === "loading" ? (
               <>
@@ -108,13 +108,7 @@ export function DetailsView({ item, focused = false, onDetailChange }: DetailsVi
             ) : detail ? (
               <WordDetailView detail={detail} focused={focused} />
             ) : null
-          ) : (
-            <text>
-              <span fg={homeScreenTheme.mutedText}>
-                Select a Wiktionary result to inspect it here.
-              </span>
-            </text>
-          )}
+          ) : null}
         </box>
       </scrollbox>
     </box>

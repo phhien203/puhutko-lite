@@ -294,7 +294,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
 
   return (
     <box width="100%" position="relative" zIndex={isOpen ? 100 : 0}>
-      <box paddingX={1} paddingY={1} alignItems="center">
+      <box paddingX={2} paddingY={1} alignItems="center">
         <input
           ref={inputRef}
           width="100%"
@@ -330,21 +330,23 @@ export function Autocomplete<T extends { label: string; value: string }>({
             const bg = isHighlighted
               ? homeScreenTheme.autocompleteItemHighlightedBackground
               : homeScreenTheme.autocompleteMenuBackground
-            const fg = isHighlighted ? homeScreenTheme.autocompleteItemHighlightedForeground : undefined
+            const fg = isHighlighted
+              ? homeScreenTheme.autocompleteItemHighlightedForeground
+              : undefined
 
             return (
               <box
                 key={index}
-                paddingX={1}
+                paddingX={2}
                 paddingY={0}
                 flexDirection="column"
                 backgroundColor={bg}
               >
                 <text>
-                    <span bg={bg} fg={fg}>
-                      {item.label}
-                    </span>
-                  </text>
+                  <span bg={bg} fg={fg}>
+                    {item.label}
+                  </span>
+                </text>
                 {description ? (
                   <text>
                     <span bg={bg} fg={fg ?? homeScreenTheme.mutedText}>

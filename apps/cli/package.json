@@ -13,6 +13,7 @@
     "@opentui-ui/dialog": "0.1.2",
     "@puhutko/kaikki": "workspace:*",
     "@puhutko/shared": "workspace:*",
+    "@puhutko/word-example": "workspace:*",
     "@puhutko/word-tags": "workspace:*",
     "@puhutko/wiktionary": "workspace:*",
     "react": "19.2.5",
