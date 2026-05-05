@@ -191,7 +191,7 @@ function mapInflections(forms: KaikkiEntry["forms"]): InflectionForm[] {
     (form) => `${form.category ?? "other"}:${form.label}:${form.value}`,
   )
 
-  return inflections.slice(0, 24)
+  return inflections
 }
 
 function mapInflectionForm(value: string, tags: string[]): InflectionForm {

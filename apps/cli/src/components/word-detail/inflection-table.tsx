@@ -27,7 +27,7 @@ const nounCaseDisplayOrder: Array<{ caseName: FinnishNominalCase; label: string 
   "spacer",
   { caseName: "illative", label: "Illative (S-Mihin)" },
   { caseName: "inessive", label: "Inessive (S-Missa)" },
-  { caseName: "elative", label: "Elative (S-Mista)" },
+  { caseName: "elative",  label: "Elative  (S-Mista)" },
   "spacer",
   { caseName: "allative", label: "Allative (L-Mihin)" },
   { caseName: "adessive", label: "Adessive (L-Milla)" },
@@ -38,9 +38,9 @@ const nounCaseDisplayOrder: Array<{ caseName: FinnishNominalCase; label: string 
 ]
 
 const verbPersons = [
-  { pronoun: "mina", person: "1", number: "singular" },
-  { pronoun: "sina", person: "2", number: "singular" },
-  { pronoun: "han", person: "3", number: "singular" },
+  { pronoun: "minä", person: "1", number: "singular" },
+  { pronoun: "sinä", person: "2", number: "singular" },
+  { pronoun: "hän", person: "3", number: "singular" },
   { pronoun: "me", person: "1", number: "plural" },
   { pronoun: "te", person: "2", number: "plural" },
   { pronoun: "he", person: "3", number: "plural" },
