@@ -1,17 +1,21 @@
+import { useDialog, useDialogState } from "@opentui-ui/dialog/react"
 import { useKeyboard, useTerminalDimensions } from "@opentui/react"
-import type { WiktionarySearchItem } from "@puhutko/shared"
+import type { WiktionarySearchItem, WordDetail } from "@puhutko/shared"
 import { searchFinnishWiktionaryEntries } from "@puhutko/wiktionary"
 import React from "react"
 import { useOutletContext } from "react-router"
 import { Autocomplete } from "../components/autocomplete"
 import { DetailsView } from "../components/details-view"
 import { RecentSearches } from "../components/recent-searches"
+import { TagsManagerDialog } from "../components/word-detail/tags-manager-dialog"
 import { draculaColors, homeScreenTheme } from "../theme/colors"
 import type { HomeScreenAction, HomeScreenOutletContext, HomeScreenState } from "./home-screen.types"
 import { addRecentSearch, getNextFocusTarget } from "./home-screen.utils"
 
 const SIDEBAR_WIDTH = 40
 const NARROW_TERMINAL_WIDTH = 90
+
+type TagsManagerDialogWord = Pick<WordDetail, "id" | "word">
 
 const initialState: HomeScreenState = {
   focusTarget: "autocomplete",
@@ -71,12 +75,15 @@ function homeScreenReducer(state: HomeScreenState, action: HomeScreenAction): Ho
 }
 
 export function HomeScreen() {
+  const dialog = useDialog()
   const { setAutocompleteActive } = useOutletContext<HomeScreenOutletContext>()
   const { width } = useTerminalDimensions()
+  const isDialogOpen = useDialogState((state) => state.isOpen)
   const [query, setQuery] = React.useState("")
   const [recentSearches, setRecentSearches] = React.useState<WiktionarySearchItem[]>([])
   const [recentSelectedIndex, setRecentSelectedIndex] = React.useState<number | null>(null)
   const [selectedItem, setSelectedItem] = React.useState<WiktionarySearchItem | null>(null)
+  const [selectedDetail, setSelectedDetail] = React.useState<TagsManagerDialogWord | null>(null)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
   const [state, dispatch] = React.useReducer(homeScreenReducer, initialState)
 
@@ -122,6 +129,10 @@ export function HomeScreen() {
     setSelectedItem(item)
   }, [])
 
+  const handleDetailChange = React.useCallback((detail: TagsManagerDialogWord | null) => {
+    setSelectedDetail(detail)
+  }, [])
+
   React.useEffect(() => {
     dispatch({ type: "layout/sync", isSidebarVisible, isNarrowTerminal })
   }, [isNarrowTerminal, isSidebarVisible])
@@ -148,6 +159,22 @@ export function HomeScreen() {
   }, [recentSearches])
 
   useKeyboard((key) => {
+    if (isDialogOpen) {
+      return
+    }
+
+    if (key.ctrl && key.name === "t") {
+      if (!selectedItem || !selectedDetail) {
+        return
+      }
+
+      void dialog.prompt({
+        size: "large",
+        content: (context) => <TagsManagerDialog detail={selectedDetail} dialogId={context.dialogId} dismiss={context.dismiss} />,
+      })
+      return
+    }
+
     if (key.name === "tab") {
       dispatch({ type: "focus/next", backwards: key.shift, isNarrowTerminal })
       return
@@ -161,7 +188,7 @@ export function HomeScreen() {
   return (
     <box width="100%" height="100%" flexDirection={isSidebarVisible ? "row" : "column"} gap={1}>
       {isSidebarVisible ? (
-        <box width={SIDEBAR_WIDTH} flexDirection="column" gap={1} minHeight={0}>
+        <box width={SIDEBAR_WIDTH} flexDirection="column" gap={0} minHeight={0}>
           <box
             backgroundColor={autocompleteFocused ? draculaColors.currentLine : draculaColors.background}
             flexDirection="column"
@@ -198,7 +225,7 @@ export function HomeScreen() {
         padding={1}
         backgroundColor={detailsFocused ? draculaColors.currentLine : draculaColors.background}
       >
-        <DetailsView item={selectedItem} focused={detailsFocused} />
+        <DetailsView item={selectedItem} focused={detailsFocused} onDetailChange={handleDetailChange} />
       </box>
 
       {errorMessage ? (

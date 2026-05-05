@@ -10,8 +10,10 @@
   "dependencies": {
     "@opentui/core": "0.2.2",
     "@opentui/react": "0.2.2",
+    "@opentui-ui/dialog": "0.1.2",
     "@puhutko/kaikki": "workspace:*",
     "@puhutko/shared": "workspace:*",
+    "@puhutko/word-tags": "workspace:*",
     "@puhutko/wiktionary": "workspace:*",
     "react": "19.2.5",
     "react-router": "^7.9.6"

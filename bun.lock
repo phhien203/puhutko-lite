@@ -8,11 +8,13 @@
     "apps/cli": {
       "name": "@puhutko/cli",
       "dependencies": {
+        "@opentui-ui/dialog": "0.1.2",
         "@opentui/core": "0.2.2",
         "@opentui/react": "0.2.2",
         "@puhutko/kaikki": "workspace:*",
         "@puhutko/shared": "workspace:*",
         "@puhutko/wiktionary": "workspace:*",
+        "@puhutko/word-tags": "workspace:*",
         "react": "19.2.5",
         "react-router": "^7.9.6",
       },
@@ -60,8 +62,17 @@
         "typescript": "6.0.3",
       },
     },
+    "packages/word-tags": {
+      "name": "@puhutko/word-tags",
+      "devDependencies": {
+        "@types/bun": "1.3.13",
+        "typescript": "6.0.3",
+      },
+    },
   },
   "packages": {
+    "@opentui-ui/dialog": ["@opentui-ui/dialog@0.1.2", "", { "peerDependencies": { "@opentui/core": "^0.1.69", "@opentui/react": "^0.1.69", "@opentui/solid": "^0.1.69" }, "optionalPeers": ["@opentui/react", "@opentui/solid"] }, "sha512-EZ4FG5u5sxU75+6pcsJsLzsD5JqO05So/1ceZUKUu7nxZ9IF7gcZEi+MU4HnYC9cb2Q7w6hM9y3/iW+jE1C53w=="],
+
     "@opentui/core": ["@opentui/core@0.2.2", "", { "dependencies": { "bun-ffi-structs": "0.2.2", "diff": "9.0.0", "marked": "17.0.1", "string-width": "7.2.0", "strip-ansi": "7.1.2", "yoga-layout": "3.2.1" }, "optionalDependencies": { "@opentui/core-darwin-arm64": "0.2.2", "@opentui/core-darwin-x64": "0.2.2", "@opentui/core-linux-arm64": "0.2.2", "@opentui/core-linux-x64": "0.2.2", "@opentui/core-win32-arm64": "0.2.2", "@opentui/core-win32-x64": "0.2.2" }, "peerDependencies": { "web-tree-sitter": "0.25.10" } }, "sha512-wxg1CD58SVrowu+WgbhZNi3UP/wWxPio2Kj2IeTjomoIE+6EXLxR8eCCxHYVuQUd9E4fknrKkY5HmiSsp6oPow=="],
 
     "@opentui/core-darwin-arm64": ["@opentui/core-darwin-arm64@0.2.2", "", { "os": "darwin", "cpu": "arm64" }, "sha512-tY5n3ZRQx+b0kyhQJJLsyJMeZ+0w4FV37YZc/Qqv3qvOqE9kZPw/7adR77FYwWDm/7fax94mLMrR8Y5bKUkDmw=="],
@@ -87,6 +98,8 @@
     "@puhutko/shared": ["@puhutko/shared@workspace:packages/shared"],
 
     "@puhutko/wiktionary": ["@puhutko/wiktionary@workspace:packages/wiktionary"],
+
+    "@puhutko/word-tags": ["@puhutko/word-tags@workspace:packages/word-tags"],
 
     "@types/bun": ["@types/bun@1.3.13", "", { "dependencies": { "bun-types": "1.3.13" } }, "sha512-9fqXWk5YIHGGnUau9TEi+qdlTYDAnOj+xLCmSTwXfAIqXr2x4tytJb43E9uCvt09zJURKXwAtkoH4nLQfzeTXw=="],
 

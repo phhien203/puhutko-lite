@@ -4,16 +4,23 @@ import React from "react"
 import { draculaColors, homeScreenTheme } from "../theme/colors"
 import { WordDetailView } from "./word-detail"
 
+type TagsManagerDialogWord = Pick<WordDetail, "id" | "word">
+
 type DetailsViewProps = {
   item: WiktionarySearchItem | null
   focused?: boolean
+  onDetailChange?: (detail: TagsManagerDialogWord | null) => void
 }
 
 type DetailStatus = "idle" | "loading" | "loaded" | "not-found" | "error"
 
-export function DetailsView({ item, focused = false }: DetailsViewProps) {
+export function DetailsView({ item, focused = false, onDetailChange }: DetailsViewProps) {
   const [detail, setDetail] = React.useState<WordDetail | null>(null)
   const [status, setStatus] = React.useState<DetailStatus>("idle")
+
+  React.useEffect(() => {
+    onDetailChange?.(detail ? { id: detail.id, word: detail.word } : null)
+  }, [detail, onDetailChange])
 
   React.useEffect(() => {
     if (!item) {
@@ -36,6 +43,7 @@ export function DetailsView({ item, focused = false }: DetailsViewProps) {
         }
 
         if (!nextDetail) {
+          setDetail(null)
           setStatus("not-found")
           return
         }
@@ -47,6 +55,7 @@ export function DetailsView({ item, focused = false }: DetailsViewProps) {
           return
         }
 
+        setDetail(null)
         setStatus("error")
       }
     })()

@@ -1,3 +1,4 @@
+import { useDialogState } from "@opentui-ui/dialog/react"
 import { useKeyboard, useRenderer } from "@opentui/react"
 import React from "react"
 import { Outlet, useLocation, useNavigate } from "react-router"
@@ -12,13 +13,14 @@ export function RootLayout({ routes }: RootLayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const renderer = useRenderer()
+  const isDialogOpen = useDialogState((state) => state.isOpen)
   const [isAutocompleteActive, setIsAutocompleteActive] = React.useState(false)
 
   const activeRoute = routes.find((route) => route.path === location.pathname)
   const footerHints = routes.map((route) => `[${route.shortcut}] ${route.label}`).join("  ")
 
   useKeyboard((key) => {
-    if (isAutocompleteActive) {
+    if (isAutocompleteActive || isDialogOpen) {
       return
     }
 
@@ -50,7 +52,7 @@ export function RootLayout({ routes }: RootLayoutProps) {
         <Outlet context={{ setAutocompleteActive: setIsAutocompleteActive }} />
       </box>
 
-      <box flexShrink={0} paddingX={1} paddingTop={1} backgroundColor={draculaColors.background}>
+      <box flexShrink={0} paddingX={1} paddingY={1} backgroundColor={draculaColors.background}>
         <text>
           {footerHints}  [b] Sidebar    [Tab] Next    [q] Quit    [Esc] Quit
         </text>

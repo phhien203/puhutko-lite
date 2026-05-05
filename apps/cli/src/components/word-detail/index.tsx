@@ -1,4 +1,6 @@
 import type { WordDetail } from "@puhutko/shared"
+import React from "react"
+import { useWordTags } from "../../features/word-tags/word-tags-provider"
 import { homeScreenTheme } from "../../theme/colors"
 import { GradationHeader } from "./gradation"
 import { InflectionTable } from "./inflection-table"
@@ -11,6 +13,32 @@ type WordDetailProps = {
 export { normalizeAsciiFontWord, splitStrongGrade } from "./gradation"
 
 export function WordDetailView({ detail, focused = false }: WordDetailProps) {
+  const { changeToken, listTagsForWord } = useWordTags()
+  const [assignedTagNames, setAssignedTagNames] = React.useState<string[]>([])
+
+  React.useEffect(() => {
+    if (!detail) {
+      setAssignedTagNames([])
+      return
+    }
+
+    let cancelled = false
+
+    void (async () => {
+      const tags = await listTagsForWord(detail.id)
+
+      if (cancelled) {
+        return
+      }
+
+      setAssignedTagNames(tags.filter((item) => item.assigned).map((item) => item.tag.name))
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [changeToken, detail, listTagsForWord])
+
   if (!detail) {
     return null
   }
@@ -32,6 +60,18 @@ export function WordDetailView({ detail, focused = false }: WordDetailProps) {
         <text>
           <span fg={homeScreenTheme.mutedText}>{detail.partOfSpeech}</span>
         </text>
+
+        <box width="100%" flexDirection="column">
+          <text>
+            <strong>Tags</strong>
+            {"  "}
+            <span fg={homeScreenTheme.mutedText}>Ctrl+t Manage tags</span>
+          </text>
+
+          <text>
+            {assignedTagNames.length > 0 ? assignedTagNames.join(", ") : <span fg={homeScreenTheme.mutedText}>No tags yet.</span>}
+          </text>
+        </box>
       </box>
 
       {detail.pronunciationUrl ? (
