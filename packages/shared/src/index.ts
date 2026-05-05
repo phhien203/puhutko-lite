@@ -26,9 +26,36 @@ export type MeaningGroup = {
   meanings: string[]
 }
 
+export type FinnishNominalCase =
+  | "nominative"
+  | "genitive"
+  | "partitive"
+  | "essive"
+  | "translative"
+  | "inessive"
+  | "elative"
+  | "illative"
+  | "adessive"
+  | "ablative"
+  | "allative"
+  | "abessive"
+  | "comitative"
+  | "instructive"
+
+export type FinnishGrammaticalNumber = "singular" | "plural"
+
+export type FinnishVerbPerson = "1" | "2" | "3"
+
 export type InflectionForm = {
   label: string
   value: string
+  category?: "case" | "verb" | "other"
+  case?: FinnishNominalCase
+  number?: FinnishGrammaticalNumber
+  person?: FinnishVerbPerson
+  tense?: "present" | "past"
+  mood?: "indicative" | "conditional" | "potential" | "imperative"
+  tags?: string[]
 }
 
 export type ConsonantGradation = {

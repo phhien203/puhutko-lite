@@ -1,4 +1,13 @@
-import type { ConsonantGradation, InflectionForm, MeaningGroup, PartOfSpeech, WordDetail } from "@puhutko/shared"
+import type {
+  ConsonantGradation,
+  FinnishGrammaticalNumber,
+  FinnishNominalCase,
+  FinnishVerbPerson,
+  InflectionForm,
+  MeaningGroup,
+  PartOfSpeech,
+  WordDetail,
+} from "@puhutko/shared"
 
 type KaikkiEntry = {
   word?: string
@@ -20,6 +29,29 @@ type KaikkiEntry = {
 }
 
 const ignoredFormTags = new Set(["table-tags", "inflection-template", "class", "rare"])
+
+const nominalCaseTags = new Map<string, FinnishNominalCase>([
+  ["nominative", "nominative"],
+  ["genitive", "genitive"],
+  ["partitive", "partitive"],
+  ["essive", "essive"],
+  ["translative", "translative"],
+  ["inessive", "inessive"],
+  ["elative", "elative"],
+  ["illative", "illative"],
+  ["adessive", "adessive"],
+  ["ablative", "ablative"],
+  ["allative", "allative"],
+  ["abessive", "abessive"],
+  ["comitative", "comitative"],
+  ["instructive", "instructive"],
+])
+
+const verbPersonTags = new Map<string, FinnishVerbPerson>([
+  ["first-person", "1"],
+  ["second-person", "2"],
+  ["third-person", "3"],
+])
 
 const supportedGradationPatterns = new Map<string, ConsonantGradation>([
   ["kk-k", { pattern: "kk-k", strong: "kk", weak: "k" }],
@@ -155,14 +187,50 @@ function mapInflections(forms: KaikkiEntry["forms"]): InflectionForm[] {
   const inflections = uniqueBy(
     forms
       ?.filter((form) => form.form && form.form !== "-" && form.tags?.some((tag) => !ignoredFormTags.has(tag)))
-      .map((form) => ({
-        label: formatInflectionLabel(form.tags ?? []),
-        value: form.form ?? "",
-      })) ?? [],
-    (form) => `${form.label}:${form.value}`,
+      .map((form) => mapInflectionForm(form.form ?? "", form.tags ?? [])) ?? [],
+    (form) => `${form.category ?? "other"}:${form.label}:${form.value}`,
   )
 
   return inflections.slice(0, 24)
+}
+
+function mapInflectionForm(value: string, tags: string[]): InflectionForm {
+  const visibleTags = getVisibleTags(tags)
+  const nominalCase = getNominalCase(visibleTags)
+  const number = getGrammaticalNumber(visibleTags)
+  const person = getVerbPerson(visibleTags)
+  const mood = getVerbMood(visibleTags)
+  const tense = getVerbTense(visibleTags)
+  const baseForm: InflectionForm = {
+    label: formatInflectionLabel(visibleTags),
+    value,
+    tags: visibleTags,
+  }
+
+  if (nominalCase) {
+    return {
+      ...baseForm,
+      category: "case",
+      case: nominalCase,
+      number,
+    }
+  }
+
+  if (person || mood || tense) {
+    return {
+      ...baseForm,
+      category: "verb",
+      number,
+      person,
+      mood,
+      tense,
+    }
+  }
+
+  return {
+    ...baseForm,
+    category: "other",
+  }
 }
 
 function parseConsonantGradation(word: string, forms: KaikkiEntry["forms"]): ConsonantGradation | undefined {
@@ -279,14 +347,84 @@ function getFormTokens(forms: KaikkiEntry["forms"]) {
   )
 }
 
-function formatInflectionLabel(tags: string[]) {
-  const visibleTags = tags.filter((tag) => !ignoredFormTags.has(tag))
+function getVisibleTags(tags: string[]) {
+  return tags.filter((tag) => !ignoredFormTags.has(tag))
+}
 
+function formatInflectionLabel(visibleTags: string[]) {
   if (visibleTags.length === 0) {
     return "form"
   }
 
   return visibleTags.join(" ")
+}
+
+function getNominalCase(tags: string[]) {
+  for (const tag of tags) {
+    const nominalCase = nominalCaseTags.get(tag)
+
+    if (nominalCase) {
+      return nominalCase
+    }
+  }
+
+  return undefined
+}
+
+function getGrammaticalNumber(tags: string[]): FinnishGrammaticalNumber | undefined {
+  if (tags.includes("singular")) {
+    return "singular"
+  }
+
+  if (tags.includes("plural")) {
+    return "plural"
+  }
+
+  return undefined
+}
+
+function getVerbPerson(tags: string[]) {
+  for (const tag of tags) {
+    const person = verbPersonTags.get(tag)
+
+    if (person) {
+      return person
+    }
+  }
+
+  return undefined
+}
+
+function getVerbMood(tags: string[]): InflectionForm["mood"] {
+  if (tags.includes("indicative")) {
+    return "indicative"
+  }
+
+  if (tags.includes("conditional")) {
+    return "conditional"
+  }
+
+  if (tags.includes("potential")) {
+    return "potential"
+  }
+
+  if (tags.includes("imperative")) {
+    return "imperative"
+  }
+
+  return undefined
+}
+
+function getVerbTense(tags: string[]): InflectionForm["tense"] {
+  if (tags.includes("present")) {
+    return "present"
+  }
+
+  if (tags.includes("past")) {
+    return "past"
+  }
+
+  return undefined
 }
 
 function mapPartOfSpeech(pos: string | undefined): PartOfSpeech {
