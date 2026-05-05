@@ -124,6 +124,6 @@ export async function searchFinnishWiktionaryEntries(
 
   return candidates
     .filter((item) => finnishWords.has(item.value))
-    .slice(0, 10)
+    .slice(0, 20)
     .map(({ normalizedValue: _normalizedValue, ...item }) => item)
 }

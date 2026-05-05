@@ -170,7 +170,7 @@ export function HomeScreen() {
               onChange={handleQueryChange}
               onSelect={setSelectedItem}
               focused={autocompleteFocused}
-              maxVisibleItems={10}
+              maxVisibleItems={20}
               placeholder="Enter a Finnish word..."
               loaderFn={searchFinnishWiktionaryEntries}
               onError={handleError}
