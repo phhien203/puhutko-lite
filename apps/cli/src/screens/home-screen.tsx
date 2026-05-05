@@ -6,41 +6,12 @@ import { useOutletContext } from "react-router"
 import { Autocomplete } from "../components/autocomplete"
 import { DetailsView } from "../components/details-view"
 import { RecentSearches } from "../components/recent-searches"
-import { homeScreenTheme } from "../theme/colors"
-
-type HomeScreenOutletContext = {
-  setAutocompleteActive: (active: boolean) => void
-}
-
-type FocusTarget = "autocomplete" | "recent" | "details"
-
-type HomeScreenState = {
-  focusTarget: FocusTarget
-  isSidebarExpanded: boolean
-  isAutocompleteActive: boolean
-}
-
-type HomeScreenAction =
-  | { type: "autocomplete/set-active"; active: boolean }
-  | { type: "sidebar/toggle"; isNarrowTerminal: boolean }
-  | { type: "focus/next"; backwards: boolean; isNarrowTerminal: boolean }
-  | { type: "layout/sync"; isSidebarVisible: boolean; isNarrowTerminal: boolean }
+import { draculaColors, homeScreenTheme } from "../theme/colors"
+import type { HomeScreenAction, HomeScreenOutletContext, HomeScreenState } from "./home-screen.types"
+import { addRecentSearch, getNextFocusTarget } from "./home-screen.utils"
 
 const SIDEBAR_WIDTH = 40
 const NARROW_TERMINAL_WIDTH = 90
-const RECENT_SEARCHES = Array.from(
-  { length: 100 },
-  (_, index) => `Recent search ${index + 1}`,
-)
-
-function getNextFocusTarget(current: FocusTarget, backwards: boolean): FocusTarget {
-  const order: FocusTarget[] = ["autocomplete", "recent", "details"]
-  const currentIndex = order.indexOf(current)
-  const step = backwards ? -1 : 1
-  const nextIndex = (currentIndex + step + order.length) % order.length
-
-  return order[nextIndex] ?? "autocomplete"
-}
 
 const initialState: HomeScreenState = {
   focusTarget: "autocomplete",
@@ -103,6 +74,8 @@ export function HomeScreen() {
   const { setAutocompleteActive } = useOutletContext<HomeScreenOutletContext>()
   const { width } = useTerminalDimensions()
   const [query, setQuery] = React.useState("")
+  const [recentSearches, setRecentSearches] = React.useState<WiktionarySearchItem[]>([])
+  const [recentSelectedIndex, setRecentSelectedIndex] = React.useState<number | null>(null)
   const [selectedItem, setSelectedItem] = React.useState<WiktionarySearchItem | null>(null)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
   const [state, dispatch] = React.useReducer(homeScreenReducer, initialState)
@@ -135,6 +108,20 @@ export function HomeScreen() {
     setErrorMessage("Failed to load suggestions.")
   }, [])
 
+  const handleAutocompleteSelect = React.useCallback((item: WiktionarySearchItem) => {
+    setSelectedItem(item)
+    setRecentSearches((currentItems) => addRecentSearch(currentItems, item))
+    setRecentSelectedIndex(0)
+  }, [])
+
+  const handleRecentSelectedIndexChange = React.useCallback((index: number | null) => {
+    setRecentSelectedIndex(index)
+  }, [])
+
+  const handleRecentSelect = React.useCallback((item: WiktionarySearchItem) => {
+    setSelectedItem(item)
+  }, [])
+
   React.useEffect(() => {
     dispatch({ type: "layout/sync", isSidebarVisible, isNarrowTerminal })
   }, [isNarrowTerminal, isSidebarVisible])
@@ -144,6 +131,21 @@ export function HomeScreen() {
       setAutocompleteActive(false)
     }
   }, [setAutocompleteActive])
+
+  React.useEffect(() => {
+    if (recentSearches.length === 0) {
+      setRecentSelectedIndex(null)
+      return
+    }
+
+    setRecentSelectedIndex((currentIndex) => {
+      if (currentIndex === null) {
+        return null
+      }
+
+      return Math.min(currentIndex, recentSearches.length - 1)
+    })
+  }, [recentSearches])
 
   useKeyboard((key) => {
     if (key.name === "tab") {
@@ -161,14 +163,14 @@ export function HomeScreen() {
       {isSidebarVisible ? (
         <box width={SIDEBAR_WIDTH} flexDirection="column" gap={1} minHeight={0}>
           <box
-            backgroundColor={autocompleteFocused ? homeScreenTheme.panelFocusedBackground : undefined}
+            backgroundColor={autocompleteFocused ? draculaColors.currentLine : draculaColors.background}
             flexDirection="column"
             zIndex={state.isAutocompleteActive ? 100 : 0}
           >
             <Autocomplete
               value={query}
               onChange={handleQueryChange}
-              onSelect={setSelectedItem}
+              onSelect={handleAutocompleteSelect}
               focused={autocompleteFocused}
               maxVisibleItems={20}
               placeholder="Enter a Finnish word..."
@@ -179,7 +181,13 @@ export function HomeScreen() {
           </box>
 
           <box flexGrow={1} minHeight={0}>
-            <RecentSearches items={RECENT_SEARCHES} focused={recentFocused} />
+            <RecentSearches
+              items={recentSearches}
+              selectedIndex={recentSelectedIndex}
+              onSelectedIndexChange={handleRecentSelectedIndexChange}
+              onSelect={handleRecentSelect}
+              focused={recentFocused}
+            />
           </box>
         </box>
       ) : null}
@@ -187,6 +195,8 @@ export function HomeScreen() {
       <box
         flexGrow={1}
         minHeight={0}
+        padding={1}
+        backgroundColor={detailsFocused ? draculaColors.currentLine : draculaColors.background}
       >
         <DetailsView item={selectedItem} focused={detailsFocused} />
       </box>

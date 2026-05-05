@@ -2,6 +2,7 @@ import { useKeyboard, useRenderer } from "@opentui/react"
 import React from "react"
 import { Outlet, useLocation, useNavigate } from "react-router"
 import type { AppRouteMeta } from "./router"
+import { draculaColors } from "../theme/colors"
 
 type RootLayoutProps = {
   routes: AppRouteMeta[]
@@ -34,8 +35,8 @@ export function RootLayout({ routes }: RootLayoutProps) {
   })
 
   return (
-    <box width="100%" height="100%" flexDirection="column" padding={1} gap={1}>
-      <box paddingX={1} paddingY={0}>
+    <box width="100%" height="100%" flexDirection="column" padding={0} gap={1} backgroundColor={draculaColors.background2}>
+      {/*<box paddingX={1} paddingY={1}>
         <text>
           <strong>puhutko-lite</strong>
           {"  "}
@@ -43,15 +44,15 @@ export function RootLayout({ routes }: RootLayoutProps) {
           {"  "}
           <span fg="gray">{location.pathname}</span>
         </text>
-      </box>
+      </box>*/}
 
       <box padding={0} flexGrow={1} minHeight={0}>
         <Outlet context={{ setAutocompleteActive: setIsAutocompleteActive }} />
       </box>
 
-      <box paddingX={0} paddingY={0}>
+      <box flexShrink={0} paddingX={1} paddingTop={1} backgroundColor={draculaColors.background}>
         <text>
-          {footerHints}  <strong>[b]</strong> Sidebar <strong>[Tab]</strong> Next <strong>[q]</strong> Quit <strong>[Esc]</strong> Quit
+          {footerHints}  [b] Sidebar    [Tab] Next    [q] Quit    [Esc] Quit
         </text>
       </box>
     </box>

@@ -1,12 +1,13 @@
 export const draculaColors = {
-  background: "#282A36",
-  currentLine: "#44475A",
+  background: "#22212C",
+  background2: "#212C2A",
+  currentLine: "#454158",
   foreground: "#F8F8F2",
-  comment: "#6272A4",
-  cyan: "#8BE9FD",
-  green: "#50FA7B",
-  pink: "#FF79C6",
-  red: "#FF5555",
+  comment: "#7970A9",
+  cyan: "#80FFEA",
+  green: "#8AFF80",
+  pink: "#FF80BF",
+  red: "#FF9580",
 } as const
 
 export const homeScreenTheme = {

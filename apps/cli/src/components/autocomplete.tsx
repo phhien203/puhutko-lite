@@ -1,7 +1,7 @@
 import { RenderableEvents, type InputRenderable } from "@opentui/core"
 import { useKeyboard } from "@opentui/react"
 import React from "react"
-import { homeScreenTheme } from "../theme/colors"
+import { draculaColors, homeScreenTheme } from "../theme/colors"
 import { useDebounce } from "../hooks/use-debounce"
 
 type AutocompleteProps<T> = {
@@ -303,6 +303,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
           flexGrow={1}
           value={value}
           placeholder={placeholder}
+          placeholderColor={draculaColors.foreground}
           onInput={handleInputChange}
           onSubmit={submitCurrentValue}
         />

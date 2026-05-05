@@ -1,7 +1,7 @@
 import { getFinnishWordDetail } from "@puhutko/kaikki"
 import type { WiktionarySearchItem, WordDetail } from "@puhutko/shared"
 import React from "react"
-import { homeScreenTheme } from "../theme/colors"
+import { draculaColors, homeScreenTheme } from "../theme/colors"
 import { WordDetailView } from "./word-detail"
 
 type DetailsViewProps = {
@@ -63,9 +63,10 @@ export function DetailsView({ item, focused = false }: DetailsViewProps) {
       flexDirection="column"
       padding={0}
       minHeight={0}
+      backgroundColor={focused ? draculaColors.currentLine : draculaColors.background}
     >
       <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focused}>
-        <box width="100%" flexDirection="column" gap={1} padding={1}>
+        <box width="100%" flexDirection="column" gap={1} padding={0}>
           {item ? (
             status === "loading" ? (
               <>
