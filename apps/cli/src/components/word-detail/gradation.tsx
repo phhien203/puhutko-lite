@@ -33,7 +33,12 @@ function HighlightedGradationAsciiFont({
   word: string
   gradation?: ConsonantGradation
 }) {
-  const normalizedWord = normalizeAsciiFontWord(word) ?? word
+  const normalizedWord = normalizeAsciiFontWord(word)
+
+  if (!normalizedWord) {
+    return null
+  }
+
   const parts = splitStrongGrade(normalizedWord, gradation)
 
   if (parts.length === 1 && !parts[0]?.highlight) {
@@ -148,13 +153,17 @@ function splitGradeByPosition(
 }
 
 export function normalizeAsciiFontWord(word: string) {
-  const normalizedWord = word.trim()
+  const normalizedWord = word.trim().normalize("NFC")
 
   if (!normalizedWord) {
     return null
   }
 
   return normalizedWord
+    .replaceAll("ä", "a")
+    .replaceAll("Ä", "A")
+    .replaceAll("ö", "o")
+    .replaceAll("Ö", "O")
 }
 
 function splitGradeBySearch(

@@ -96,7 +96,7 @@ export async function getFinnishWordDetail(word: string, signal?: AbortSignal): 
 }
 
 function normalizeWord(word: string) {
-  return word.trim()
+  return word.trim().normalize("NFC")
 }
 
 function buildWordJsonlUrl(word: string) {

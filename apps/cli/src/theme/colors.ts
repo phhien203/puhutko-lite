@@ -15,7 +15,7 @@ export const homeScreenTheme = {
   panelBorder: draculaColors.comment,
   panelFocusedBorder: draculaColors.foreground,
   autocompleteLoading: draculaColors.green,
-  autocompleteMenuBackground: draculaColors.background,
+  autocompleteMenuBackground: draculaColors.currentLine,
   autocompleteItemHighlightedBackground: draculaColors.pink,
   autocompleteItemHighlightedForeground: draculaColors.foreground,
   recentSearchFocusedForeground: draculaColors.foreground,

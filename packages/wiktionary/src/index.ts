@@ -46,7 +46,7 @@ function buildPageContentUrl(words: string[]) {
 }
 
 function normalizeWord(word: string) {
-  return word.trim().toLocaleLowerCase("fi-FI")
+  return word.trim().normalize("NFC").toLocaleLowerCase("fi-FI")
 }
 
 function isOpenSearchResponse(value: unknown): value is WiktionaryOpenSearchResponse {
