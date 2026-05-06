@@ -6,7 +6,11 @@
       "name": "puhutko-lite",
     },
     "apps/cli": {
-      "name": "@puhutko/cli",
+      "name": "puhutko-lite",
+      "version": "0.1.0",
+      "bin": {
+        "puhutko-lite": "dist/puhutko-lite",
+      },
       "dependencies": {
         "@opentui-ui/dialog": "0.1.2",
         "@opentui/core": "0.2.2",
@@ -124,8 +128,6 @@
 
     "@opentui/react": ["@opentui/react@0.2.2", "", { "dependencies": { "@opentui/core": "0.2.2", "react-reconciler": "^0.32.0" }, "peerDependencies": { "react": ">=19.0.0", "react-devtools-core": "^7.0.1", "ws": "^8.18.0" } }, "sha512-29Lkyb6gZYccrGJG7swKe3VUXhPW1UpTiBBV0EZpRcbw1+rSaVGgWp4/xcF9V9zaYAxeB2LxQ1PN5QXAmUrfAw=="],
 
-    "@puhutko/cli": ["@puhutko/cli@workspace:apps/cli"],
-
     "@puhutko/kaikki": ["@puhutko/kaikki@workspace:packages/kaikki"],
 
     "@puhutko/recent-searches": ["@puhutko/recent-searches@workspace:packages/recent-searches"],
@@ -171,6 +173,8 @@
     "hono": ["hono@4.12.16", "", {}, "sha512-jN0ZewiNAWSe5khM3EyCmBb250+b40wWbwNILNfEvq84VREWwOIkuUsFONk/3i3nqkz7Oe1PcpM2mwQEK2L9Kg=="],
 
     "marked": ["marked@17.0.1", "", { "bin": { "marked": "bin/marked.js" } }, "sha512-boeBdiS0ghpWcSwoNm/jJBwdpFaMnZWRzjA6SkUMYb40SVaN1x7mmfGKp0jvexGcx+7y2La5zRZsYFZI6Qpypg=="],
+
+    "puhutko-lite": ["puhutko-lite@workspace:apps/cli"],
 
     "react": ["react@19.2.5", "", {}, "sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA=="],
 

@@ -23,7 +23,7 @@ jobs:
             build_script: build:macos:x64
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -43,7 +43,7 @@ jobs:
         run: chmod +x apps/cli/dist/puhutko-lite && tar -czf puhutko-lite-${{ matrix.arch }}.tar.gz -C apps/cli/dist puhutko-lite
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: puhutko-lite-${{ matrix.arch }}
           path: puhutko-lite-${{ matrix.arch }}.tar.gz
@@ -61,15 +61,15 @@ jobs:
       sha_x64: ${{ steps.sha.outputs.sha_x64 }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download arm64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: puhutko-lite-darwin-arm64
 
       - name: Download x64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: puhutko-lite-darwin-x64
 
@@ -117,7 +117,7 @@ jobs:
           exit 1
 
       - name: Checkout tap repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ env.OWNER }}/${{ env.TAP_REPO }}
           token: ${{ env.HOMEBREW_TAP_TOKEN }}
