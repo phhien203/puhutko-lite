@@ -18,9 +18,9 @@ jobs:
           - arch: darwin-arm64
             runner: macos-14
             build_script: build:macos:arm64
-          - arch: darwin-x64
-            runner: macos-13
-            build_script: build:macos:x64
+          # - arch: darwin-x64
+          #   runner: macos-13
+          #   build_script: build:macos:x64
     steps:
       - name: Checkout
         uses: actions/checkout@v5
