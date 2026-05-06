@@ -1,9 +1,9 @@
 import type { WordDetail } from "@puhutko/shared"
+import { useQuery } from "@tanstack/react-query"
 import React from "react"
 
-import { useWordExample } from "../../../providers/word-example-provider"
-import { useWordTags } from "../../../providers/word-tags-provider"
 import { homeScreenTheme } from "../../../theme/colors"
+import { wordExampleQueryOptions, wordTagsQueryOptions } from "./word-detail.queries"
 import { GradationHeader } from "./gradation"
 import { InflectionTable } from "./inflection-table"
 
@@ -15,60 +15,23 @@ type WordDetailProps = {
 export { normalizeAsciiFontWord, splitStrongGrade } from "./gradation"
 
 export function WordDetailView({ detail, focused = false }: WordDetailProps) {
-  const { changeToken, listTagsForWord } = useWordTags()
-  const { changeToken: wordExampleChangeToken, getWordExample } = useWordExample()
-  const [assignedTagNames, setAssignedTagNames] = React.useState<string[]>([])
-  const [wordExampleText, setWordExampleText] = React.useState<string | null>(null)
-
-  React.useEffect(() => {
-    if (!detail) {
-      setAssignedTagNames([])
-      return
-    }
-
-    let cancelled = false
-
-    void (async () => {
-      const tags = await listTagsForWord(detail.id)
-
-      if (cancelled) {
-        return
-      }
-
-      setAssignedTagNames(tags.filter((item) => item.assigned).map((item) => item.tag.name))
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [changeToken, detail, listTagsForWord])
-
-  React.useEffect(() => {
-    if (!detail) {
-      setWordExampleText(null)
-      return
-    }
-
-    let cancelled = false
-
-    void (async () => {
-      const wordExample = await getWordExample(detail.id)
-
-      if (cancelled) {
-        return
-      }
-
-      setWordExampleText(wordExample?.text ?? null)
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [detail, getWordExample, wordExampleChangeToken])
+  const tagsQuery = useQuery({
+    ...wordTagsQueryOptions(detail?.id ?? ""),
+    enabled: Boolean(detail),
+  })
+  const wordExampleQuery = useQuery({
+    ...wordExampleQueryOptions(detail?.id ?? ""),
+    enabled: Boolean(detail),
+  })
 
   if (!detail) {
     return null
   }
+
+  const assignedTagNames = (tagsQuery.data ?? [])
+    .filter((item) => item.assigned)
+    .map((item) => item.tag.name)
+  const wordExampleText = wordExampleQuery.data?.text ?? null
 
   const exampleLines = wordExampleText ? wordExampleText.split("\n") : []
 

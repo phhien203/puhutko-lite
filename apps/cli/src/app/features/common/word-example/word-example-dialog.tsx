@@ -1,7 +1,9 @@
 import type { TextareaRenderable } from "@opentui/core"
 import { useDialogKeyboard } from "@opentui-ui/dialog/react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import React from "react"
-import { useWordExample } from "../../../providers/word-example-provider"
+import { wordExampleService } from "../../../persistence"
+import { queryKeys } from "../../../query/query-keys"
 import { draculaColors, homeScreenTheme } from "../../../theme/colors"
 
 type WordExampleDialogProps = {
@@ -21,11 +23,16 @@ export function WordExampleDialog({
   resolve,
   dismiss,
 }: WordExampleDialogProps) {
-  const { saveWordExample } = useWordExample()
+  const queryClient = useQueryClient()
   const textareaRef = React.useRef<TextareaRenderable | null>(null)
   const [value, setValue] = React.useState(initialValue)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const saveWordExampleMutation = useMutation({
+    mutationFn: (nextValue: string) => wordExampleService.saveWordExample(wordId, nextValue),
+    onSuccess: (wordExample) => {
+      queryClient.setQueryData(queryKeys.wordExample(wordId), wordExample)
+    },
+  })
 
   const syncValueFromTextarea = React.useCallback(() => {
     setValue(textareaRef.current?.plainText ?? "")
@@ -33,21 +40,19 @@ export function WordExampleDialog({
   }, [])
 
   const handleSubmit = React.useCallback(async () => {
-    if (isSubmitting) {
+    if (saveWordExampleMutation.isPending) {
       return
     }
 
-    setIsSubmitting(true)
     setErrorMessage(null)
 
     try {
-      const wordExample = await saveWordExample(wordId, value)
+      const wordExample = await saveWordExampleMutation.mutateAsync(value)
       resolve(wordExample.text)
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to save example.")
-      setIsSubmitting(false)
     }
-  }, [isSubmitting, resolve, saveWordExample, value, wordId])
+  }, [resolve, saveWordExampleMutation, value])
 
   useDialogKeyboard((key) => {
     if (key.name === "escape") {
@@ -90,7 +95,7 @@ export function WordExampleDialog({
 
       <text>Ctrl+s Save</text>
 
-      {isSubmitting ? (
+      {saveWordExampleMutation.isPending ? (
         <text>
           <span fg={homeScreenTheme.mutedText}>Saving...</span>
         </text>

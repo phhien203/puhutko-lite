@@ -1,17 +1,15 @@
 import { DialogProvider } from "@opentui-ui/dialog/react"
+import { QueryClientProvider } from "@tanstack/react-query"
 import { RouterProvider } from "react-router"
-import { WordExampleProvider } from "./providers/word-example-provider"
-import { WordTagsProvider } from "./providers/word-tags-provider"
+import { queryClient } from "./query/query-client"
 import { router } from "./router"
 
 export function App() {
   return (
-    <WordExampleProvider>
-      <WordTagsProvider>
+    <QueryClientProvider client={queryClient}>
         <DialogProvider>
           <RouterProvider router={router} />
         </DialogProvider>
-      </WordTagsProvider>
-    </WordExampleProvider>
+    </QueryClientProvider>
   )
 }

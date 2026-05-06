@@ -1,8 +1,9 @@
 import React from "react"
 
-import { getFinnishWordDetail } from "@puhutko/kaikki"
+import { useQuery } from "@tanstack/react-query"
 import type { WiktionarySearchItem, WordDetail } from "@puhutko/shared"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
+import { wordDetailQueryOptions } from "./details-view.queries"
 import { WordDetailView } from "./word-detail/word-detail"
 
 type TagsManagerDialogWord = Pick<WordDetail, "id" | "word">
@@ -10,61 +11,29 @@ type TagsManagerDialogWord = Pick<WordDetail, "id" | "word">
 type DetailsViewProps = {
   item: WiktionarySearchItem | null
   focused?: boolean
-  onDetailChange?: (detail: TagsManagerDialogWord | null) => void
+  onSelectionStateChange?: (value: {
+    detail: TagsManagerDialogWord | null
+    isFetchingDifferentSelection: boolean
+  }) => void
 }
 
-type DetailStatus = "idle" | "loading" | "loaded" | "not-found" | "error"
+export function DetailsView({ item, focused = false, onSelectionStateChange }: DetailsViewProps) {
+  const detailQuery = useQuery({
+    ...wordDetailQueryOptions(item?.value ?? ""),
+    enabled: Boolean(item),
+    placeholderData: (previousData) => previousData,
+  })
 
-export function DetailsView({ item, focused = false, onDetailChange }: DetailsViewProps) {
-  const [detail, setDetail] = React.useState<WordDetail | null>(null)
-  const [status, setStatus] = React.useState<DetailStatus>("idle")
+  const detail: WordDetail | null = detailQuery.data ?? null
+  const isFetchingDifferentSelection = detailQuery.isFetching && detailQuery.isPlaceholderData
+  const activeDetail = item && !detailQuery.isPlaceholderData && detail ? detail : null
 
   React.useEffect(() => {
-    onDetailChange?.(detail ? { id: detail.id, word: detail.word } : null)
-  }, [detail, onDetailChange])
-
-  React.useEffect(() => {
-    if (!item) {
-      setDetail(null)
-      setStatus("idle")
-      return
-    }
-
-    const controller = new AbortController()
-
-    setDetail(null)
-    setStatus("loading")
-
-    void (async () => {
-      try {
-        const nextDetail = await getFinnishWordDetail(item.value, controller.signal)
-
-        if (controller.signal.aborted) {
-          return
-        }
-
-        if (!nextDetail) {
-          setDetail(null)
-          setStatus("not-found")
-          return
-        }
-
-        setDetail(nextDetail)
-        setStatus("loaded")
-      } catch {
-        if (controller.signal.aborted) {
-          return
-        }
-
-        setDetail(null)
-        setStatus("error")
-      }
-    })()
-
-    return () => {
-      controller.abort()
-    }
-  }, [item?.value])
+    onSelectionStateChange?.({
+      detail: activeDetail ? { id: activeDetail.id, word: activeDetail.word } : null,
+      isFetchingDifferentSelection,
+    })
+  }, [activeDetail, isFetchingDifferentSelection, onSelectionStateChange])
 
   return (
     <box
@@ -78,7 +47,16 @@ export function DetailsView({ item, focused = false, onDetailChange }: DetailsVi
       <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focused}>
         <box width="100%" flexDirection="column" gap={0} padding={0}>
           {item ? (
-            status === "loading" ? (
+            detail ? (
+              <>
+                {isFetchingDifferentSelection ? (
+                  <text>
+                    <span fg={homeScreenTheme.mutedText}>Loading new selection...</span>
+                  </text>
+                ) : null}
+                <WordDetailView detail={detail} focused={focused} />
+              </>
+            ) : detailQuery.isPending ? (
               <>
                 <text>
                   <strong>{item.label}</strong>
@@ -87,16 +65,7 @@ export function DetailsView({ item, focused = false, onDetailChange }: DetailsVi
                   <span fg={homeScreenTheme.mutedText}>Loading Kaikki details...</span>
                 </text>
               </>
-            ) : status === "not-found" ? (
-              <>
-                <text>
-                  <strong>{item.label}</strong>
-                </text>
-                <text>
-                  <span fg={homeScreenTheme.mutedText}>No Kaikki detail found for this word.</span>
-                </text>
-              </>
-            ) : status === "error" ? (
+            ) : detailQuery.isError ? (
               <>
                 <text>
                   <strong>{item.label}</strong>
@@ -105,9 +74,16 @@ export function DetailsView({ item, focused = false, onDetailChange }: DetailsVi
                   <span fg={homeScreenTheme.errorText}>Failed to load Kaikki details.</span>
                 </text>
               </>
-            ) : detail ? (
-              <WordDetailView detail={detail} focused={focused} />
-            ) : null
+            ) : (
+              <>
+                <text>
+                  <strong>{item.label}</strong>
+                </text>
+                <text>
+                  <span fg={homeScreenTheme.mutedText}>No Kaikki detail found for this word.</span>
+                </text>
+              </>
+            )
           ) : null}
         </box>
       </scrollbox>

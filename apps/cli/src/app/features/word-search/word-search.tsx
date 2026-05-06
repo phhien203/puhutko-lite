@@ -1,5 +1,6 @@
 import { useDialog, useDialogState } from "@opentui-ui/dialog/react"
 import { useKeyboard, useTerminalDimensions } from "@opentui/react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { RECENT_SEARCH_LIMIT } from "./word-search.constants"
 import React from "react"
 import { useOutletContext } from "react-router"
@@ -8,14 +9,16 @@ import type { RecentSearch } from "@puhutko/recent-searches"
 import type { WiktionarySearchItem } from "@puhutko/shared"
 import { searchFinnishWiktionaryEntries } from "@puhutko/wiktionary"
 import { recentSearchesService } from "../../persistence"
+import { queryKeys } from "../../query/query-keys"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
-import { useWordExample } from "../../providers/word-example-provider"
 import { DetailsView } from "../common/details-view"
 import { WordExampleDialog } from "../common/word-example/word-example-dialog"
+import { wordExampleQueryOptions } from "../common/word-detail/word-detail.queries"
 import { TagsManagerDialog } from "../common/word-tags/tags-manager-dialog"
 import { Autocomplete } from "./components/autocomplete"
 import { RecentSearches } from "./components/recent-searches"
 import { NARROW_TERMINAL_WIDTH, SIDEBAR_WIDTH } from "./word-search.constants"
+import { recentSearchesQueryOptions } from "./word-search.queries"
 import { initialWordSearchState, wordSearchReducer } from "./word-search.reducer"
 import type { TagsManagerDialogWord, WordSearchOutletContext } from "./word-search.types"
 
@@ -30,24 +33,38 @@ function toSearchItem(item: RecentSearch): WiktionarySearchItem {
 
 export function WordSearch() {
   const dialog = useDialog()
-  const { getWordExample } = useWordExample()
+  const queryClient = useQueryClient()
   const { setAutocompleteActive } = useOutletContext<WordSearchOutletContext>()
   const { width } = useTerminalDimensions()
   const isDialogOpen = useDialogState((state) => state.isOpen)
+  const recentSearchesQuery = useQuery(recentSearchesQueryOptions(RECENT_SEARCH_LIMIT))
+  const saveRecentSearchMutation = useMutation({
+    mutationFn: (item: WiktionarySearchItem) => recentSearchesService.saveRecentSearch(item),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.recentSearches(RECENT_SEARCH_LIMIT),
+      })
+    },
+  })
 
   const [query, setQuery] = React.useState("")
-  const [recentSearches, setRecentSearches] = React.useState<WiktionarySearchItem[]>([])
   const [recentSelectedIndex, setRecentSelectedIndex] = React.useState<number | null>(null)
   const [selectedItem, setSelectedItem] = React.useState<WiktionarySearchItem | null>(null)
   const [selectedDetail, setSelectedDetail] = React.useState<TagsManagerDialogWord | null>(null)
+  const [isFetchingDifferentSelection, setIsFetchingDifferentSelection] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
   const [state, dispatch] = React.useReducer(wordSearchReducer, initialWordSearchState)
+  const recentSearches = React.useMemo(
+    () => (recentSearchesQuery.data ?? []).map(toSearchItem),
+    [recentSearchesQuery.data],
+  )
 
   const isNarrowTerminal = width < NARROW_TERMINAL_WIDTH
   const isSidebarVisible = !isNarrowTerminal && state.isSidebarExpanded
-  const autocompleteFocused = isSidebarVisible && state.focusTarget === "autocomplete"
-  const recentFocused = isSidebarVisible && state.focusTarget === "recent"
-  const detailsFocused = !isSidebarVisible || state.focusTarget === "details"
+  const autocompleteFocused =
+    !isDialogOpen && isSidebarVisible && state.focusTarget === "autocomplete"
+  const recentFocused = !isDialogOpen && isSidebarVisible && state.focusTarget === "recent"
+  const detailsFocused = !isDialogOpen && (!isSidebarVisible || state.focusTarget === "details")
 
   const handleAutocompleteActiveChange = React.useCallback(
     (active: boolean) => {
@@ -73,17 +90,11 @@ export function WordSearch() {
 
   const handleAutocompleteSelect = React.useCallback((item: WiktionarySearchItem) => {
     setSelectedItem(item)
-    void recentSearchesService
-      .saveRecentSearch(item)
-      .then(() => recentSearchesService.listRecentSearches(RECENT_SEARCH_LIMIT))
-      .then((items) => {
-        setRecentSearches(items.map(toSearchItem))
-        setRecentSelectedIndex(0)
-      })
-      .catch((error) => {
-        setErrorMessage(error instanceof Error ? error.message : "Failed to save recent search.")
-      })
-  }, [])
+    setRecentSelectedIndex(0)
+    void saveRecentSearchMutation.mutateAsync(item).catch((error) => {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to save recent search.")
+    })
+  }, [saveRecentSearchMutation])
 
   const handleRecentSelectedIndexChange = React.useCallback((index: number | null) => {
     setRecentSelectedIndex(index)
@@ -93,20 +104,25 @@ export function WordSearch() {
     setSelectedItem(item)
   }, [])
 
-  const handleDetailChange = React.useCallback((detail: TagsManagerDialogWord | null) => {
-    setSelectedDetail(detail)
-  }, [])
+  const handleSelectionStateChange = React.useCallback(
+    (value: { detail: TagsManagerDialogWord | null; isFetchingDifferentSelection: boolean }) => {
+      setSelectedDetail(value.detail)
+      setIsFetchingDifferentSelection(value.isFetchingDifferentSelection)
+    },
+    [],
+  )
 
   React.useEffect(() => {
-    void recentSearchesService
-      .listRecentSearches(RECENT_SEARCH_LIMIT)
-      .then((items) => {
-        setRecentSearches(items.map(toSearchItem))
-      })
-      .catch((error) => {
-        setErrorMessage(error instanceof Error ? error.message : "Failed to load recent searches.")
-      })
-  }, [])
+    if (!recentSearchesQuery.error) {
+      return
+    }
+
+    setErrorMessage(
+      recentSearchesQuery.error instanceof Error
+        ? recentSearchesQuery.error.message
+        : "Failed to load recent searches.",
+    )
+  }, [recentSearchesQuery.error])
 
   React.useEffect(() => {
     dispatch({ type: "layout/sync", isSidebarVisible, isNarrowTerminal })
@@ -139,7 +155,7 @@ export function WordSearch() {
     }
 
     if (key.ctrl && key.name === "t") {
-      if (!selectedItem || !selectedDetail) {
+      if (!selectedItem || !selectedDetail || isFetchingDifferentSelection) {
         return
       }
 
@@ -157,13 +173,13 @@ export function WordSearch() {
     }
 
     if (key.ctrl && key.name === "e") {
-      if (!selectedDetail) {
+      if (!selectedDetail || isFetchingDifferentSelection) {
         return
       }
 
       void (async () => {
         try {
-          const wordExample = await getWordExample(selectedDetail.id)
+          const wordExample = await queryClient.fetchQuery(wordExampleQueryOptions(selectedDetail.id))
 
           await dialog.prompt({
             size: "large",
@@ -241,7 +257,7 @@ export function WordSearch() {
         <DetailsView
           item={selectedItem}
           focused={detailsFocused}
-          onDetailChange={handleDetailChange}
+          onSelectionStateChange={handleSelectionStateChange}
         />
       </box>
 

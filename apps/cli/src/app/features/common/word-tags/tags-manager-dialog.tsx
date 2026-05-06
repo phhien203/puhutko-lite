@@ -2,9 +2,12 @@ import React from "react"
 
 import { useDialog, useDialogKeyboard } from "@opentui-ui/dialog/react"
 import type { WordDetail } from "@puhutko/shared"
-import { findNextJumpMatch, getCircularIndex, type TagWithAssignment } from "@puhutko/word-tags"
-import { useWordTags } from "../../../providers/word-tags-provider"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { findNextJumpMatch, getCircularIndex } from "@puhutko/word-tags"
+import { wordTagsService } from "../../../persistence"
+import { queryKeys } from "../../../query/query-keys"
 import { draculaColors, homeScreenTheme } from "../../../theme/colors"
+import { wordTagsQueryOptions } from "../word-detail/word-detail.queries"
 import { DeleteTagDialog } from "./delete-tag-dialog"
 import { TagNameDialog } from "./tag-name-dialog"
 
@@ -48,59 +51,69 @@ function getPrintableCharacter(name: string, sequence: string) {
 
 export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDialogProps) {
   const dialog = useDialog()
-  const { listTagsForWord, createTag, renameTag, deleteTag, toggleTagAssignment } = useWordTags()
-  const [tags, setTags] = React.useState<TagWithAssignment[]>([])
+  const queryClient = useQueryClient()
+  const tagsQuery = useQuery(wordTagsQueryOptions(detail.id))
+  const createTagMutation = useMutation({
+    mutationFn: (name: string) => wordTagsService.createTag(name),
+  })
+  const renameTagMutation = useMutation({
+    mutationFn: ({ tagId, name }: { tagId: string; name: string }) => wordTagsService.renameTag(tagId, name),
+  })
+  const deleteTagMutation = useMutation({
+    mutationFn: (tagId: string) => wordTagsService.deleteTag(tagId),
+  })
+  const toggleTagAssignmentMutation = useMutation({
+    mutationFn: ({ wordId, tagId }: { wordId: string; tagId: string }) =>
+      wordTagsService.toggleTagAssignment(wordId, tagId),
+  })
+
+  const tags = tagsQuery.data ?? []
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const [scrollOffset, setScrollOffset] = React.useState(0)
-  const [isLoading, setIsLoading] = React.useState(true)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
+  const [preferredTagId, setPreferredTagId] = React.useState<string | null>(null)
   const selectedIndexRef = React.useRef(0)
 
   React.useEffect(() => {
     selectedIndexRef.current = selectedIndex
   }, [selectedIndex])
 
-  const syncSelection = React.useCallback(
-    (nextTags: TagWithAssignment[], nextSelectedIndex: number) => {
-      const safeSelectedIndex =
-        nextTags.length === 0 ? 0 : Math.max(0, Math.min(nextSelectedIndex, nextTags.length - 1))
+  React.useEffect(() => {
+    if (!preferredTagId || tags.length === 0) {
+      return
+    }
 
-      setTags(nextTags)
-      setSelectedIndex(safeSelectedIndex)
-      setScrollOffset((currentOffset) =>
-        getVisibleScrollOffset(currentOffset, safeSelectedIndex, nextTags.length),
-      )
-    },
-    [],
-  )
+    const nextIndex = tags.findIndex((item) => item.tag.id === preferredTagId)
 
-  const reloadTags = React.useCallback(
-    async (options?: { preferredTagId?: string; fallbackIndex?: number }) => {
-      setIsLoading(true)
-      setErrorMessage(null)
+    if (nextIndex >= 0) {
+      setSelectedIndex(nextIndex)
+      setScrollOffset((currentOffset) => getVisibleScrollOffset(currentOffset, nextIndex, tags.length))
+    }
 
-      try {
-        const nextTags = await listTagsForWord(detail.id)
-        const fallbackIndex = options?.fallbackIndex ?? selectedIndexRef.current
-        const preferredTagId = options?.preferredTagId
-        const preferredIndex = preferredTagId
-          ? nextTags.findIndex((item) => item.tag.id === preferredTagId)
-          : -1
-        const nextSelectedIndex = preferredIndex >= 0 ? preferredIndex : fallbackIndex
-
-        syncSelection(nextTags, nextSelectedIndex)
-      } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : "Failed to load tags.")
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [detail.id, listTagsForWord, syncSelection],
-  )
+    setPreferredTagId(null)
+  }, [preferredTagId, tags])
 
   React.useEffect(() => {
-    void reloadTags({ fallbackIndex: 0 })
-  }, [detail.id])
+    if (tags.length === 0) {
+      setSelectedIndex(0)
+      setScrollOffset(0)
+      return
+    }
+
+    const safeSelectedIndex = Math.max(0, Math.min(selectedIndexRef.current, tags.length - 1))
+    setSelectedIndex(safeSelectedIndex)
+    setScrollOffset((currentOffset) =>
+      getVisibleScrollOffset(currentOffset, safeSelectedIndex, tags.length),
+    )
+  }, [tags])
+
+  React.useEffect(() => {
+    if (!tagsQuery.error) {
+      return
+    }
+
+    setErrorMessage(tagsQuery.error instanceof Error ? tagsQuery.error.message : "Failed to load tags.")
+  }, [tagsQuery.error])
 
   const selectedTag = tags[selectedIndex] ?? null
   const visibleTags = tags.slice(scrollOffset, scrollOffset + VISIBLE_ROW_COUNT)
@@ -128,22 +141,18 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
     }
 
     setErrorMessage(null)
-    setTags((currentTags) =>
-      currentTags.map((item, index) =>
-        index === selectedIndex ? { ...item, assigned: !item.assigned } : item,
-      ),
-    )
 
     try {
-      const assigned = await toggleTagAssignment(detail.id, selectedTag.tag.id)
-      setTags((currentTags) =>
-        currentTags.map((item, index) => (index === selectedIndex ? { ...item, assigned } : item)),
-      )
+      await toggleTagAssignmentMutation.mutateAsync({
+        wordId: detail.id,
+        tagId: selectedTag.tag.id,
+      })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.wordTags(detail.id) })
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to update tag assignment.")
-      void reloadTags({ preferredTagId: selectedTag.tag.id })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.wordTags(detail.id) })
     }
-  }, [detail.id, reloadTags, selectedIndex, selectedTag, toggleTagAssignment])
+  }, [detail.id, queryClient, selectedTag, toggleTagAssignmentMutation])
 
   const handleCreateTag = React.useCallback(async () => {
     const createdTagId = await dialog.prompt<string>({
@@ -154,7 +163,7 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
           description={`Add a tag for ${detail.word}.`}
           initialValue=""
           submitLabel="Create"
-          submit={createTag}
+          submit={createTagMutation.mutateAsync}
           resolve={context.resolve}
           dismiss={context.dismiss}
         />
@@ -162,9 +171,10 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
     })
 
     if (createdTagId) {
-      await reloadTags({ preferredTagId: createdTagId })
+      setPreferredTagId(createdTagId)
+      await queryClient.invalidateQueries({ queryKey: queryKeys.wordTags(detail.id) })
     }
-  }, [createTag, detail.word, dialog, reloadTags])
+  }, [createTagMutation.mutateAsync, detail.id, detail.word, dialog, queryClient])
 
   const handleRenameTag = React.useCallback(async () => {
     if (!selectedTag) {
@@ -179,7 +189,7 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
           description={`Rename ${selectedTag.tag.name}.`}
           initialValue={selectedTag.tag.name}
           submitLabel="Save"
-          submit={(name) => renameTag(selectedTag.tag.id, name)}
+          submit={(name) => renameTagMutation.mutateAsync({ tagId: selectedTag.tag.id, name })}
           resolve={context.resolve}
           dismiss={context.dismiss}
         />
@@ -187,9 +197,10 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
     })
 
     if (renamedTagId) {
-      await reloadTags({ preferredTagId: renamedTagId })
+      setPreferredTagId(renamedTagId)
+      await queryClient.invalidateQueries({ queryKey: queryKeys.wordTags(detail.id) })
     }
-  }, [dialog, reloadTags, renameTag, selectedTag])
+  }, [detail.id, dialog, queryClient, renameTagMutation, selectedTag])
 
   const handleDeleteTag = React.useCallback(async () => {
     if (!selectedTag) {
@@ -213,12 +224,12 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
     }
 
     try {
-      await deleteTag(selectedTag.tag.id)
-      await reloadTags({ fallbackIndex: selectedIndex })
+      await deleteTagMutation.mutateAsync(selectedTag.tag.id)
+      await queryClient.invalidateQueries({ queryKey: queryKeys.wordTags(detail.id) })
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to delete tag.")
     }
-  }, [deleteTag, dialog, reloadTags, selectedIndex, selectedTag])
+  }, [deleteTagMutation, detail.id, dialog, queryClient, selectedTag])
 
   useDialogKeyboard((key) => {
     if (key.name === "escape") {
@@ -231,7 +242,7 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
       return
     }
 
-    if (isLoading) {
+    if (tagsQuery.isPending) {
       return
     }
 
@@ -304,7 +315,7 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
         </text>
       ) : null}
 
-      {isLoading ? (
+      {tagsQuery.isPending ? (
         <text>
           <span fg={homeScreenTheme.mutedText}>Loading tags...</span>
         </text>
