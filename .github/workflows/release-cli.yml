@@ -18,9 +18,6 @@ jobs:
           - arch: darwin-arm64
             runner: macos-14
             build_script: build:macos:arm64
-          # - arch: darwin-x64
-          #   runner: macos-13
-          #   build_script: build:macos:x64
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -58,7 +55,6 @@ jobs:
     outputs:
       version: ${{ steps.release_meta.outputs.version }}
       sha_arm64: ${{ steps.sha.outputs.sha_arm64 }}
-      sha_x64: ${{ steps.sha.outputs.sha_x64 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -67,11 +63,6 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: puhutko-lite-darwin-arm64
-
-      - name: Download x64 artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: puhutko-lite-darwin-x64
 
       - name: Collect release metadata
         id: release_meta
@@ -84,16 +75,13 @@ jobs:
         id: sha
         run: |
           SHA_ARM64="$(sha256sum puhutko-lite-darwin-arm64.tar.gz | cut -d' ' -f1)"
-          SHA_X64="$(sha256sum puhutko-lite-darwin-x64.tar.gz | cut -d' ' -f1)"
           echo "sha_arm64=${SHA_ARM64}" >> "$GITHUB_OUTPUT"
-          echo "sha_x64=${SHA_X64}" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             puhutko-lite-darwin-arm64.tar.gz
-            puhutko-lite-darwin-x64.tar.gz
 
   update-homebrew-tap:
     name: Update Homebrew Tap
@@ -104,7 +92,6 @@ jobs:
     env:
       VERSION: ${{ needs.publish-release.outputs.version }}
       SHA_ARM64: ${{ needs.publish-release.outputs.sha_arm64 }}
-      SHA_X64: ${{ needs.publish-release.outputs.sha_x64 }}
       OWNER: ${{ github.repository_owner }}
       TAP_REPO: homebrew-puhutko-lite
       HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -136,9 +123,6 @@ jobs:
               if Hardware::CPU.arm?
                 url "https://github.com/${OWNER}/puhutko-lite/releases/download/v${VERSION}/puhutko-lite-darwin-arm64.tar.gz"
                 sha256 "${SHA_ARM64}"
-              else
-                url "https://github.com/${OWNER}/puhutko-lite/releases/download/v${VERSION}/puhutko-lite-darwin-x64.tar.gz"
-                sha256 "${SHA_X64}"
               end
             end
 
