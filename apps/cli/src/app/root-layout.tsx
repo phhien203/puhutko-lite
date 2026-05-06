@@ -18,6 +18,7 @@ export function RootLayout({ routes }: RootLayoutProps) {
 
   const activeRoute = routes.find((route) => route.path === location.pathname)
   const footerHints = routes.map((route) => `[${route.shortcut}] ${route.label}`).join("   ")
+  const footerCredits = "Made with ♥︎ by Hien Pham"
 
   useKeyboard((key) => {
     if (isAutocompleteActive || isDialogOpen) {
@@ -49,11 +50,23 @@ export function RootLayout({ routes }: RootLayoutProps) {
         <Outlet context={{ setAutocompleteActive: setIsAutocompleteActive }} />
       </box>
 
-      <box flexShrink={0} paddingX={2} paddingY={1} backgroundColor={draculaColors.background}>
-        <text>
-          {footerHints}
-          {"   "}[b] Sidebar{"   "}[Tab] Next{"   "}[q] Quit
-        </text>
+      <box
+        flexShrink={0}
+        paddingX={2}
+        paddingY={1}
+        backgroundColor={draculaColors.background}
+        flexDirection="row"
+        alignItems="center"
+      >
+        <box flexGrow={1} minWidth={0}>
+          <text>
+            {footerHints}
+            {"   "}[b] Sidebar{"   "}[Tab] Next{"   "}[q] Quit
+          </text>
+        </box>
+        <box flexShrink={0} marginLeft={2}>
+          <text>{footerCredits}</text>
+        </box>
       </box>
     </box>
   )
