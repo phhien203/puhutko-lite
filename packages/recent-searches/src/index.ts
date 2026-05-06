@@ -1,0 +1,5 @@
+export { createMemoryRecentSearchesRepository } from "./adapters/memory"
+export { createSqliteRecentSearchesRepository } from "./adapters/sqlite"
+export type { RecentSearchesRepository } from "./repository"
+export { createRecentSearchesService } from "./service"
+export type { RecentSearch, RecentSearchInput, RecentSearchesService } from "./types"

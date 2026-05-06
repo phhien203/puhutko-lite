@@ -1,10 +1,13 @@
 import { useDialog, useDialogState } from "@opentui-ui/dialog/react"
 import { useKeyboard, useTerminalDimensions } from "@opentui/react"
+import { RECENT_SEARCH_LIMIT } from "./word-search.constants"
 import React from "react"
 import { useOutletContext } from "react-router"
 
+import type { RecentSearch } from "@puhutko/recent-searches"
 import type { WiktionarySearchItem } from "@puhutko/shared"
 import { searchFinnishWiktionaryEntries } from "@puhutko/wiktionary"
+import { recentSearchesService } from "../../persistence"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
 import { useWordExample } from "../../providers/word-example-provider"
 import { DetailsView } from "../common/details-view"
@@ -15,7 +18,15 @@ import { RecentSearches } from "./components/recent-searches"
 import { NARROW_TERMINAL_WIDTH, SIDEBAR_WIDTH } from "./word-search.constants"
 import { initialWordSearchState, wordSearchReducer } from "./word-search.reducer"
 import type { TagsManagerDialogWord, WordSearchOutletContext } from "./word-search.types"
-import { addRecentSearch } from "./word-search.utils"
+
+function toSearchItem(item: RecentSearch): WiktionarySearchItem {
+  return {
+    value: item.value,
+    label: item.label,
+    description: item.description,
+    url: item.url,
+  }
+}
 
 export function WordSearch() {
   const dialog = useDialog()
@@ -62,8 +73,16 @@ export function WordSearch() {
 
   const handleAutocompleteSelect = React.useCallback((item: WiktionarySearchItem) => {
     setSelectedItem(item)
-    setRecentSearches((currentItems) => addRecentSearch(currentItems, item))
-    setRecentSelectedIndex(0)
+    void recentSearchesService
+      .saveRecentSearch(item)
+      .then(() => recentSearchesService.listRecentSearches(RECENT_SEARCH_LIMIT))
+      .then((items) => {
+        setRecentSearches(items.map(toSearchItem))
+        setRecentSelectedIndex(0)
+      })
+      .catch((error) => {
+        setErrorMessage(error instanceof Error ? error.message : "Failed to save recent search.")
+      })
   }, [])
 
   const handleRecentSelectedIndexChange = React.useCallback((index: number | null) => {
@@ -76,6 +95,17 @@ export function WordSearch() {
 
   const handleDetailChange = React.useCallback((detail: TagsManagerDialogWord | null) => {
     setSelectedDetail(detail)
+  }, [])
+
+  React.useEffect(() => {
+    void recentSearchesService
+      .listRecentSearches(RECENT_SEARCH_LIMIT)
+      .then((items) => {
+        setRecentSearches(items.map(toSearchItem))
+      })
+      .catch((error) => {
+        setErrorMessage(error instanceof Error ? error.message : "Failed to load recent searches.")
+      })
   }, [])
 
   React.useEffect(() => {

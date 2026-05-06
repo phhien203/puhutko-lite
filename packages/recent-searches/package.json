@@ -1,5 +1,5 @@
 {
-  "name": "@puhutko/word-tags",
+  "name": "@puhutko/recent-searches",
   "private": true,
   "type": "module",
   "exports": {
@@ -10,6 +10,7 @@
     "check": "bunx tsc --noEmit"
   },
   "dependencies": {
+    "@puhutko/shared": "workspace:*",
     "@puhutko/sqlite": "workspace:*"
   },
   "devDependencies": {

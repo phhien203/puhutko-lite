@@ -1,4 +1,5 @@
 export { createMemoryWordTagsRepository } from "./adapters/memory"
+export { createSqliteWordTagsRepository } from "./adapters/sqlite"
 export { findNextJumpMatch, getCircularIndex } from "./navigation"
 export { normalizeTagName } from "./normalization"
 export type { WordTagsRepository } from "./repository"

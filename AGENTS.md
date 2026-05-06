@@ -27,6 +27,7 @@
 - Do not switch `dev:cli` to Bun workspace filtering. The root script intentionally uses `bun run --cwd apps/cli dev` because `bun run --filter @puhutko/cli dev` can print wrapper/status output that leaks into the fullscreen OpenTUI screen.
 - `dev:server` is safe to keep workspace-native with `bun run --filter @puhutko/server dev`.
 - In OpenTUI, raising `zIndex` on an absolutely positioned child may not be enough to overlay later sibling content. If a popup still renders under surrounding UI, raise the `zIndex` on the popup's outer wrapper too so the whole component stacks above sibling layout items.
+- In `bun:sqlite`, SQL placeholders may use names like `$wordValue`, but object bindings passed to `.get()`, `.all()`, or `.run()` should use keys without the prefix, like `{ wordValue: value }` rather than `{ $wordValue: value }`.
 
 ## Verification
 

@@ -1,10 +1,6 @@
-import {
-  createMemoryWordTagsRepository,
-  createWordTagsService,
-  type Tag,
-  type TagWithAssignment,
-} from "@puhutko/word-tags"
+import { type Tag, type TagWithAssignment } from "@puhutko/word-tags"
 import React from "react"
+import { wordTagsService } from "../persistence"
 
 type WordTagsContextValue = {
   changeToken: number
@@ -22,34 +18,33 @@ type WordTagsProviderProps = {
 const WordTagsContext = React.createContext<WordTagsContextValue | null>(null)
 
 export function WordTagsProvider({ children }: WordTagsProviderProps) {
-  const [service] = React.useState(() => createWordTagsService(createMemoryWordTagsRepository()))
   const [changeToken, setChangeToken] = React.useState(0)
 
   const value = React.useMemo<WordTagsContextValue>(
     () => ({
       changeToken,
-      listTagsForWord: (wordId) => service.listTagsForWord(wordId),
+      listTagsForWord: (wordId) => wordTagsService.listTagsForWord(wordId),
       createTag: async (name) => {
-        const tag = await service.createTag(name)
+        const tag = await wordTagsService.createTag(name)
         setChangeToken((currentValue) => currentValue + 1)
         return tag
       },
       renameTag: async (tagId, name) => {
-        const tag = await service.renameTag(tagId, name)
+        const tag = await wordTagsService.renameTag(tagId, name)
         setChangeToken((currentValue) => currentValue + 1)
         return tag
       },
       deleteTag: async (tagId) => {
-        await service.deleteTag(tagId)
+        await wordTagsService.deleteTag(tagId)
         setChangeToken((currentValue) => currentValue + 1)
       },
       toggleTagAssignment: async (wordId, tagId) => {
-        const assigned = await service.toggleTagAssignment(wordId, tagId)
+        const assigned = await wordTagsService.toggleTagAssignment(wordId, tagId)
         setChangeToken((currentValue) => currentValue + 1)
         return assigned
       },
     }),
-    [changeToken, service],
+    [changeToken],
   )
 
   return <WordTagsContext.Provider value={value}>{children}</WordTagsContext.Provider>
