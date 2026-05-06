@@ -11,13 +11,19 @@ type TagsManagerDialogWord = Pick<WordDetail, "id" | "word">
 type DetailsViewProps = {
   item: WiktionarySearchItem | null
   focused?: boolean
+  onTagSelect?: (tagId: string) => void
   onSelectionStateChange?: (value: {
     detail: TagsManagerDialogWord | null
     isFetchingDifferentSelection: boolean
   }) => void
 }
 
-export function DetailsView({ item, focused = false, onSelectionStateChange }: DetailsViewProps) {
+export function DetailsView({
+  item,
+  focused = false,
+  onTagSelect,
+  onSelectionStateChange,
+}: DetailsViewProps) {
   const detailQuery = useQuery({
     ...wordDetailQueryOptions(item?.value ?? ""),
     enabled: Boolean(item),
@@ -54,7 +60,7 @@ export function DetailsView({ item, focused = false, onSelectionStateChange }: D
                     <span fg={homeScreenTheme.mutedText}>Loading new selection...</span>
                   </text>
                 ) : null}
-                <WordDetailView detail={detail} focused={focused} />
+                <WordDetailView detail={detail} focused={focused} onTagSelect={onTagSelect} />
               </>
             ) : detailQuery.isPending ? (
               <>

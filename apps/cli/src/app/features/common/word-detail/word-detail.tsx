@@ -11,6 +11,7 @@ type WordDetailProps = {
   detail: WordDetail | null
   focused?: boolean
   showTagManagementHint?: boolean
+  onTagSelect?: (tagId: string) => void
 }
 
 export { normalizeAsciiFontWord, splitStrongGrade } from "./gradation"
@@ -19,6 +20,7 @@ export function WordDetailView({
   detail,
   focused = false,
   showTagManagementHint = true,
+  onTagSelect,
 }: WordDetailProps) {
   const tagsQuery = useQuery({
     ...wordTagsQueryOptions(detail?.id ?? ""),
@@ -33,9 +35,9 @@ export function WordDetailView({
     return null
   }
 
-  const assignedTagNames = (tagsQuery.data ?? [])
+  const assignedTags = (tagsQuery.data ?? [])
     .filter((item) => item.assigned)
-    .map((item) => item.tag.name)
+    .map((item) => ({ id: item.tag.id, name: item.tag.name }))
   const wordExampleText = wordExampleQuery.data?.text ?? null
 
   const exampleLines = wordExampleText ? wordExampleText.split("\n") : []
@@ -83,15 +85,28 @@ export function WordDetailView({
       <box width="100%" flexDirection="column">
         <text>
           <strong>Tags</strong>
-          {"  "}
-          <span fg={homeScreenTheme.linkText}>
-            {assignedTagNames.length > 0 ? (
-              assignedTagNames.join(", ")
-            ) : (
-              <span fg={homeScreenTheme.mutedText}>No tags yet.</span>
-            )}
-          </span>
         </text>
+        {assignedTags.length > 0 ? (
+          onTagSelect ? (
+            <box width="100%" flexDirection="column">
+              {assignedTags.map((tag) => (
+                <text
+                  key={`${detail.id}:tag:${tag.id}`}
+                  fg={homeScreenTheme.linkText}
+                  onMouseUp={() => {
+                    onTagSelect(tag.id)
+                  }}
+                >
+                  {tag.name}
+                </text>
+              ))}
+            </box>
+          ) : (
+            <text fg={homeScreenTheme.linkText}>{assignedTags.map((tag) => tag.name).join(", ")}</text>
+          )
+        ) : (
+          <text fg={homeScreenTheme.mutedText}>No tags yet.</text>
+        )}
 
         {showTagManagementHint ? (
           <text fg={homeScreenTheme.mutedText}>Ctrl+t Manage tags</text>

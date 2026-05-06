@@ -118,6 +118,10 @@ export function WordExplorer() {
   }, [detailQuery.error, tagsQuery.error, wordsQuery.error])
 
   React.useEffect(() => {
+    if (tagsQuery.isPending) {
+      return
+    }
+
     const existingTagIds = new Set(tags.map((tag) => tag.id))
     const filteredTagIds = selectedTagIds.filter((tagId) => existingTagIds.has(tagId))
 
@@ -135,7 +139,7 @@ export function WordExplorer() {
     if (nextParams.toString() !== searchParams.toString()) {
       setSearchParams(nextParams, { replace: true })
     }
-  }, [searchParams, selectedTagIds, setSearchParams, tags])
+  }, [searchParams, selectedTagIds, setSearchParams, tags, tagsQuery.isPending])
 
   React.useEffect(() => {
     if (tagSelectedIndex < tags.length) {

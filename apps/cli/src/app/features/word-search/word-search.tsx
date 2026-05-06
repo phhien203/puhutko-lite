@@ -3,7 +3,7 @@ import { useKeyboard, useTerminalDimensions } from "@opentui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { RECENT_SEARCH_LIMIT } from "./word-search.constants"
 import React from "react"
-import { useOutletContext } from "react-router"
+import { useNavigate, useOutletContext } from "react-router"
 
 import type { RecentSearch } from "@puhutko/recent-searches"
 import type { WiktionarySearchItem } from "@puhutko/shared"
@@ -34,6 +34,7 @@ function toSearchItem(item: RecentSearch): WiktionarySearchItem {
 export function WordSearch() {
   const dialog = useDialog()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const { setAutocompleteActive } = useOutletContext<WordSearchOutletContext>()
   const { width } = useTerminalDimensions()
   const isDialogOpen = useDialogState((state) => state.isOpen)
@@ -143,6 +144,15 @@ export function WordSearch() {
       setIsFetchingDifferentSelection(value.isFetchingDifferentSelection)
     },
     [],
+  )
+
+  const handleTagSelect = React.useCallback(
+    (tagId: string) => {
+      const params = new URLSearchParams()
+      params.set("tag", tagId)
+      navigate({ pathname: "/word-explorer", search: `?${params.toString()}` })
+    },
+    [navigate],
   )
 
   React.useEffect(() => {
@@ -290,6 +300,7 @@ export function WordSearch() {
         <DetailsView
           item={selectedItem}
           focused={detailsFocused}
+          onTagSelect={handleTagSelect}
           onSelectionStateChange={handleSelectionStateChange}
         />
       </box>
