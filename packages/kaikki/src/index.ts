@@ -253,20 +253,25 @@ function parseConsonantGradation(word: string, forms: KaikkiEntry["forms"]): Con
     const gradation = supportedGradationPatterns.get(pattern)
 
     if (gradation) {
-      if (word.includes(gradation.strong)) {
-        const strongStart = inferStrongGradeStart(word, gradation, forms)
+      const strongStart = word.includes(gradation.strong)
+        ? inferStrongGradeStart(word, gradation, forms)
+        : undefined
+      const weakStart = word.includes(gradation.weak)
+        ? inferWeakGradeStart(word, gradation, forms)
+        : undefined
 
-        if (strongStart !== undefined) {
-          return { ...gradation, strongStart }
-        }
+      if (strongStart !== undefined && weakStart !== undefined) {
+        return strongStart >= weakStart
+          ? { ...gradation, strongStart }
+          : { ...gradation, weakStart }
       }
 
-      if (word.includes(gradation.weak)) {
-        const weakStart = inferWeakGradeStart(word, gradation, forms)
+      if (strongStart !== undefined) {
+        return { ...gradation, strongStart }
+      }
 
-        if (weakStart !== undefined) {
-          return { ...gradation, weakStart }
-        }
+      if (weakStart !== undefined) {
+        return { ...gradation, weakStart }
       }
 
       return { ...gradation }
