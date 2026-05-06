@@ -10,11 +10,16 @@ import { InflectionTable } from "./inflection-table"
 type WordDetailProps = {
   detail: WordDetail | null
   focused?: boolean
+  showTagManagementHint?: boolean
 }
 
 export { normalizeAsciiFontWord, splitStrongGrade } from "./gradation"
 
-export function WordDetailView({ detail, focused = false }: WordDetailProps) {
+export function WordDetailView({
+  detail,
+  focused = false,
+  showTagManagementHint = true,
+}: WordDetailProps) {
   const tagsQuery = useQuery({
     ...wordTagsQueryOptions(detail?.id ?? ""),
     enabled: Boolean(detail),
@@ -88,7 +93,9 @@ export function WordDetailView({ detail, focused = false }: WordDetailProps) {
           </span>
         </text>
 
-        <text fg={homeScreenTheme.mutedText}>Ctrl+t Manage tags</text>
+        {showTagManagementHint ? (
+          <text fg={homeScreenTheme.mutedText}>Ctrl+t Manage tags</text>
+        ) : null}
       </box>
 
       <box width="100%" flexDirection="column">

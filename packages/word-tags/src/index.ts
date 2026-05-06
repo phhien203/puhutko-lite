@@ -11,6 +11,8 @@ export {
   type Tag,
   type TagNameValidationResult,
   type TagWithAssignment,
+  type WordExplorerSortMode,
+  type WordExplorerWord,
   type WordTagLink,
   type WordTagsService,
 } from "./types"

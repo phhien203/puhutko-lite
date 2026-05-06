@@ -1,7 +1,8 @@
-import type { Tag } from "./types"
+import type { Tag, WordTagLink } from "./types"
 
 export type WordTagsRepository = {
   listTags(): Promise<Tag[]>
+  listWordTagLinksForTagIds(tagIds: string[]): Promise<WordTagLink[]>
   getTagById(id: string): Promise<Tag | null>
   getTagByNormalizedName(normalizedName: string): Promise<Tag | null>
   createTag(input: { name: string; normalizedName: string }): Promise<Tag>

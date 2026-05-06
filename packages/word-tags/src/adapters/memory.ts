@@ -1,5 +1,5 @@
 import type { WordTagsRepository } from "../repository"
-import type { Tag } from "../types"
+import type { Tag, WordTagLink } from "../types"
 
 function cloneTag(tag: Tag): Tag {
   return { ...tag }
@@ -7,7 +7,7 @@ function cloneTag(tag: Tag): Tag {
 
 export function createMemoryWordTagsRepository(): WordTagsRepository {
   const tags = new Map<string, Tag>()
-  const wordLinks = new Map<string, Set<string>>()
+  const wordLinks = new Map<string, Map<string, WordTagLink>>()
   let nextTagId = 1
 
   return {
@@ -26,6 +26,24 @@ export function createMemoryWordTagsRepository(): WordTagsRepository {
       }
 
       return null
+    },
+    async listWordTagLinksForTagIds(tagIds) {
+      if (tagIds.length === 0) {
+        return []
+      }
+
+      const tagIdsSet = new Set(tagIds)
+      const links: WordTagLink[] = []
+
+      for (const assignedLinks of wordLinks.values()) {
+        for (const link of assignedLinks.values()) {
+          if (tagIdsSet.has(link.tagId)) {
+            links.push({ ...link })
+          }
+        }
+      }
+
+      return links
     },
     async createTag(input) {
       const now = new Date().toISOString()
@@ -63,34 +81,39 @@ export function createMemoryWordTagsRepository(): WordTagsRepository {
     async deleteTag(id) {
       tags.delete(id)
 
-      for (const [wordId, assignedTagIds] of wordLinks.entries()) {
-        assignedTagIds.delete(id)
+      for (const [wordId, assignedLinks] of wordLinks.entries()) {
+        assignedLinks.delete(id)
 
-        if (assignedTagIds.size === 0) {
+        if (assignedLinks.size === 0) {
           wordLinks.delete(wordId)
         }
       }
     },
     async listTagIdsForWord(wordId) {
-      const assignedTagIds = wordLinks.get(wordId)
-      return assignedTagIds ? Array.from(assignedTagIds) : []
+      const assignedLinks = wordLinks.get(wordId)
+      return assignedLinks ? Array.from(assignedLinks.keys()) : []
     },
     async assignTagToWord(wordId, tagId) {
-      const assignedTagIds = wordLinks.get(wordId) ?? new Set<string>()
+      const assignedLinks = wordLinks.get(wordId) ?? new Map<string, WordTagLink>()
 
-      assignedTagIds.add(tagId)
-      wordLinks.set(wordId, assignedTagIds)
+      assignedLinks.set(tagId, {
+        wordId,
+        tagId,
+        createdAt: new Date().toISOString(),
+      })
+
+      wordLinks.set(wordId, assignedLinks)
     },
     async unassignTagFromWord(wordId, tagId) {
-      const assignedTagIds = wordLinks.get(wordId)
+      const assignedLinks = wordLinks.get(wordId)
 
-      if (!assignedTagIds) {
+      if (!assignedLinks) {
         return
       }
 
-      assignedTagIds.delete(tagId)
+      assignedLinks.delete(tagId)
 
-      if (assignedTagIds.size === 0) {
+      if (assignedLinks.size === 0) {
         wordLinks.delete(wordId)
       }
     },

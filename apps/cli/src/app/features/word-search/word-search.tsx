@@ -37,12 +37,45 @@ export function WordSearch() {
   const { setAutocompleteActive } = useOutletContext<WordSearchOutletContext>()
   const { width } = useTerminalDimensions()
   const isDialogOpen = useDialogState((state) => state.isOpen)
+  const recentSearchesQueryKey = queryKeys.recentSearches(RECENT_SEARCH_LIMIT)
   const recentSearchesQuery = useQuery(recentSearchesQueryOptions(RECENT_SEARCH_LIMIT))
   const saveRecentSearchMutation = useMutation({
     mutationFn: (item: WiktionarySearchItem) => recentSearchesService.saveRecentSearch(item),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.recentSearches(RECENT_SEARCH_LIMIT),
+    onMutate: async (item) => {
+      await queryClient.cancelQueries({ queryKey: recentSearchesQueryKey })
+
+      const previousRecentSearches = queryClient.getQueryData<RecentSearch[]>(recentSearchesQueryKey) ?? []
+      const optimisticRecentSearch: RecentSearch = {
+        value: item.value,
+        label: item.label,
+        description: item.description,
+        url: item.url,
+        lastSearchedAt: new Date().toISOString(),
+      }
+
+      queryClient.setQueryData<RecentSearch[]>(
+        recentSearchesQueryKey,
+        [
+          optimisticRecentSearch,
+          ...previousRecentSearches.filter((search) => search.value !== optimisticRecentSearch.value),
+        ].slice(0, RECENT_SEARCH_LIMIT),
+      )
+
+      return { previousRecentSearches }
+    },
+    onError: (_error, _item, context) => {
+      if (!context) {
+        return
+      }
+
+      queryClient.setQueryData(recentSearchesQueryKey, context.previousRecentSearches)
+    },
+    onSuccess: (savedSearch) => {
+      queryClient.setQueryData<RecentSearch[]>(recentSearchesQueryKey, (currentSearches = []) => {
+        return [
+          savedSearch,
+          ...currentSearches.filter((search) => search.value !== savedSearch.value),
+        ].slice(0, RECENT_SEARCH_LIMIT)
       })
     },
   })

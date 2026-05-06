@@ -14,6 +14,13 @@ export type WordTagLink = {
   createdAt: string
 }
 
+export type WordExplorerSortMode = "alphabetical" | "added"
+
+export type WordExplorerWord = {
+  wordId: string
+  latestAddedAt: string
+}
+
 export type NormalizedTagName = {
   displayName: string
   normalizedName: string
@@ -30,6 +37,11 @@ export type TagNameValidationResult =
 
 export type WordTagsService = {
   listTagsForWord(wordId: string): Promise<TagWithAssignment[]>
+  listTags(): Promise<Tag[]>
+  listWordsForTagIntersection(
+    selectedTagIds: string[],
+    sortMode: WordExplorerSortMode,
+  ): Promise<WordExplorerWord[]>
   createTag(name: string): Promise<Tag>
   renameTag(tagId: string, name: string): Promise<Tag>
   deleteTag(tagId: string): Promise<void>

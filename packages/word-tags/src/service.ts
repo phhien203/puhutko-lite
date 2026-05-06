@@ -1,6 +1,6 @@
 import type { WordTagsRepository } from "./repository"
 import { sortTagsAlphabetically } from "./sorting"
-import type { Tag, WordTagsService } from "./types"
+import type { Tag, WordExplorerSortMode, WordExplorerWord, WordTagsService } from "./types"
 import { validateTagName } from "./validation"
 
 function assertTagFound(tag: Tag | null, tagId: string): Tag {
@@ -36,6 +36,60 @@ export function createWordTagsService(repository: WordTagsRepository): WordTagsS
       return repository.createTag({
         name: validation.value.displayName,
         normalizedName: validation.value.normalizedName,
+      })
+    },
+    async listTags() {
+      const tags = await repository.listTags()
+      return sortTagsAlphabetically(tags)
+    },
+    async listWordsForTagIntersection(selectedTagIds, sortMode) {
+      if (selectedTagIds.length === 0) {
+        return []
+      }
+
+      const deduplicatedTagIds = Array.from(new Set(selectedTagIds))
+      const links = await repository.listWordTagLinksForTagIds(deduplicatedTagIds)
+      const linksByWordId = new Map<string, Map<string, string>>()
+
+      for (const link of links) {
+        const linksByTagId = linksByWordId.get(link.wordId) ?? new Map<string, string>()
+        linksByTagId.set(link.tagId, link.createdAt)
+        linksByWordId.set(link.wordId, linksByTagId)
+      }
+
+      const words: WordExplorerWord[] = []
+
+      for (const [wordId, linksByTagId] of linksByWordId.entries()) {
+        if (!deduplicatedTagIds.every((tagId) => linksByTagId.has(tagId))) {
+          continue
+        }
+
+        const latestAddedAt = deduplicatedTagIds.reduce((latestTimestamp, tagId) => {
+          const createdAt = linksByTagId.get(tagId)
+
+          if (!createdAt) {
+            return latestTimestamp
+          }
+
+          return latestTimestamp > createdAt ? latestTimestamp : createdAt
+        }, "")
+
+        words.push({
+          wordId,
+          latestAddedAt,
+        })
+      }
+
+      return words.sort((left, right) => {
+        if (sortMode === "added") {
+          const byAddedAt = left.latestAddedAt.localeCompare(right.latestAddedAt)
+
+          if (byAddedAt !== 0) {
+            return byAddedAt
+          }
+        }
+
+        return left.wordId.localeCompare(right.wordId, "fi-FI")
       })
     },
     async renameTag(tagId, name) {

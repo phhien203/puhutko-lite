@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite"
 import { initializeSchema } from "@puhutko/sqlite"
 import type { WordTagsRepository } from "../repository"
-import type { Tag } from "../types"
+import type { Tag, WordTagLink } from "../types"
 
 const SCHEMA_STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS tags (
@@ -42,6 +42,12 @@ type TagRow = {
 
 type TagIdRow = {
   tag_id: string
+}
+
+type WordTagLinkRow = {
+  word_id: string
+  tag_id: string
+  created_at: string
 }
 
 function mapTagRow(row: TagRow): Tag {
@@ -97,6 +103,14 @@ export function createSqliteWordTagsRepository(database: Database): WordTagsRepo
       WHERE word_tag_links.word_id = ?
         AND word_tag_links.deleted_at IS NULL
         AND tags.deleted_at IS NULL`,
+  )
+  const listWordTagLinksForTagIds = database.prepare<WordTagLinkRow, [string]>(
+    `SELECT word_tag_links.word_id, word_tag_links.tag_id, word_tag_links.created_at
+      FROM word_tag_links
+      INNER JOIN tags ON tags.id = word_tag_links.tag_id
+      WHERE word_tag_links.deleted_at IS NULL
+        AND tags.deleted_at IS NULL
+        AND word_tag_links.tag_id IN (SELECT value FROM json_each(?))`,
   )
   const assignTagToWord = database.prepare(
     `INSERT INTO word_tag_links (
@@ -160,6 +174,19 @@ export function createSqliteWordTagsRepository(database: Database): WordTagsRepo
     async getTagByNormalizedName(normalizedName) {
       const row = getTagByNormalizedName.get(normalizedName)
       return row ? mapTagRow(row) : null
+    },
+    async listWordTagLinksForTagIds(tagIds) {
+      if (tagIds.length === 0) {
+        return []
+      }
+
+      return listWordTagLinksForTagIds
+        .all(JSON.stringify(tagIds))
+        .map((row): WordTagLink => ({
+          wordId: row.word_id,
+          tagId: row.tag_id,
+          createdAt: row.created_at,
+        }))
     },
     async createTag(input) {
       const now = new Date().toISOString()

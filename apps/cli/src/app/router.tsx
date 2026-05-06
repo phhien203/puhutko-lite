@@ -2,7 +2,7 @@ import React from "react"
 import { createMemoryRouter } from "react-router"
 
 import { AboutScreen } from "./features/about-screen"
-import { SettingsScreen } from "./features/settings-screen"
+import { WordExplorer } from "./features/word-explorer/word-explorer"
 import { WordSearch } from "./features/word-search/word-search"
 import { NotFoundScreen } from "./not-found-screen"
 import { RootLayout } from "./root-layout"
@@ -28,10 +28,10 @@ export const routes: AppRouteMeta[] = [
     element: <AboutScreen />,
   },
   {
-    path: "/settings",
-    label: "Settings",
-    shortcut: "s",
-    element: <SettingsScreen />,
+    path: "/word-explorer",
+    label: "Explorer",
+    shortcut: "x",
+    element: <WordExplorer />,
   },
 ]
 
