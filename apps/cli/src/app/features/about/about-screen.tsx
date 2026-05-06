@@ -1,8 +1,4 @@
-const appPackageJson = (await Bun.file(new URL("../../../../package.json", import.meta.url)).json()) as {
-  version?: string
-}
-
-const appVersion = appPackageJson.version ?? "0.0.0"
+import { APP_VERSION } from "../../version"
 
 export function AboutScreen() {
   return (
@@ -15,7 +11,7 @@ export function AboutScreen() {
         <text>It lets you add your own tags and example notes to each word.</text>
         <text>Author: Hien Pham</text>
         <text>Data credits: kaikki.org and Wiktionary contributors (wiktionary.org).</text>
-        <text>Current version: {appVersion}</text>
+        <text>Current version: {APP_VERSION}</text>
       </box>
     </box>
   )

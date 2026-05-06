@@ -1,11 +1,18 @@
 {
-  "name": "@puhutko/cli",
-  "private": true,
+  "name": "puhutko-lite",
+  "private": false,
+  "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
+  "bin": {
+    "puhutko-lite": "dist/puhutko-lite"
+  },
   "scripts": {
     "dev": "bun --watch run src/index.tsx",
     "start": "bun run src/index.tsx",
-    "check": "bunx tsc --noEmit"
+    "check": "bunx tsc --noEmit",
+    "build:macos:arm64": "bun build --compile --target=bun-darwin-arm64 --outfile dist/puhutko-lite src/index.tsx",
+    "build:macos:x64": "bun build --compile --target=bun-darwin-x64 --outfile dist/puhutko-lite src/index.tsx"
   },
   "dependencies": {
     "@opentui/core": "0.2.2",
