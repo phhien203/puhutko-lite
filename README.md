@@ -19,6 +19,16 @@ brew install puhutko-lite
 puhutko-lite
 ```
 
+## Install on Windows 11
+
+Download the ZIP installer from GitHub Releases and run:
+
+1. Download `puhutko-lite-windows-x64.zip` from the latest release.
+2. Extract the ZIP file.
+3. Run `PuhutkoLite-Setup.exe`.
+4. Open a new CMD or PowerShell window.
+5. Run `puhutko-lite`.
+
 ## Update or uninstall
 
 ```bash

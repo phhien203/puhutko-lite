@@ -18,6 +18,13 @@ jobs:
           - arch: darwin-arm64
             runner: macos-14
             build_script: build:macos:arm64
+            binary_path: apps/cli/dist/puhutko-lite
+            artifact_file: puhutko-lite-darwin-arm64.tar.gz
+          - arch: windows-x64
+            runner: windows-latest
+            build_script: build:windows:x64
+            binary_path: apps/cli/dist/puhutko-lite.exe
+            artifact_file: puhutko-lite-windows-x64.zip
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -36,14 +43,50 @@ jobs:
       - name: Build binary
         run: bun run --cwd apps/cli ${{ matrix.build_script }}
 
-      - name: Package artifact
-        run: chmod +x apps/cli/dist/puhutko-lite && tar -czf puhutko-lite-${{ matrix.arch }}.tar.gz -C apps/cli/dist puhutko-lite
+      - name: Collect release metadata
+        id: release_meta
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test binary
+        shell: bash
+        run: |
+          OUTPUT="$(${{ matrix.binary_path }} --version)"
+          echo "$OUTPUT"
+          echo "$OUTPUT" | grep -q "${{ steps.release_meta.outputs.version }}"
+
+      - name: Install Inno Setup
+        if: ${{ matrix.arch == 'windows-x64' }}
+        shell: pwsh
+        run: choco install innosetup --yes
+
+      - name: Build Windows installer
+        if: ${{ matrix.arch == 'windows-x64' }}
+        shell: pwsh
+        run: >-
+          iscc "/DAppVersion=${{ steps.release_meta.outputs.version }}" "apps/cli/installer/windows/puhutko-lite.iss"
+
+      - name: Package artifact (macOS)
+        if: ${{ startsWith(matrix.arch, 'darwin-') }}
+        shell: bash
+        run: |
+          chmod +x apps/cli/dist/puhutko-lite
+          tar -czf ${{ matrix.artifact_file }} -C apps/cli/dist puhutko-lite
+
+      - name: Package artifact (Windows)
+        if: ${{ matrix.arch == 'windows-x64' }}
+        shell: pwsh
+        run: >-
+          Compress-Archive -Path "apps/cli/installer/windows/Output/PuhutkoLite-Setup.exe" -DestinationPath "${{ matrix.artifact_file }}" -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
           name: puhutko-lite-${{ matrix.arch }}
-          path: puhutko-lite-${{ matrix.arch }}.tar.gz
+          path: ${{ matrix.artifact_file }}
           if-no-files-found: error
 
   publish-release:
@@ -55,6 +98,7 @@ jobs:
     outputs:
       version: ${{ steps.release_meta.outputs.version }}
       sha_arm64: ${{ steps.sha.outputs.sha_arm64 }}
+      sha_windows_x64: ${{ steps.sha.outputs.sha_windows_x64 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -63,6 +107,11 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: puhutko-lite-darwin-arm64
+
+      - name: Download windows artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: puhutko-lite-windows-x64
 
       - name: Collect release metadata
         id: release_meta
@@ -75,13 +124,16 @@ jobs:
         id: sha
         run: |
           SHA_ARM64="$(sha256sum puhutko-lite-darwin-arm64.tar.gz | cut -d' ' -f1)"
+          SHA_WINDOWS_X64="$(sha256sum puhutko-lite-windows-x64.zip | cut -d' ' -f1)"
           echo "sha_arm64=${SHA_ARM64}" >> "$GITHUB_OUTPUT"
+          echo "sha_windows_x64=${SHA_WINDOWS_X64}" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             puhutko-lite-darwin-arm64.tar.gz
+            puhutko-lite-windows-x64.zip
 
   update-homebrew-tap:
     name: Update Homebrew Tap

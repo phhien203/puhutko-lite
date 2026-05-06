@@ -12,7 +12,8 @@
     "start": "bun run src/index.tsx",
     "check": "bunx tsc --noEmit",
     "build:macos:arm64": "bun build --compile --target=bun-darwin-arm64 --outfile dist/puhutko-lite src/index.tsx",
-    "build:macos:x64": "bun build --compile --target=bun-darwin-x64 --outfile dist/puhutko-lite src/index.tsx"
+    "build:macos:x64": "bun build --compile --target=bun-darwin-x64 --outfile dist/puhutko-lite src/index.tsx",
+    "build:windows:x64": "bun build --compile --target=bun-windows-x64 --outfile dist/puhutko-lite.exe src/index.tsx"
   },
   "dependencies": {
     "@opentui/core": "0.2.2",
