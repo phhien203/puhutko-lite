@@ -8,7 +8,7 @@ type SplitGrade = {
 }
 
 const gradationHighlightColor = homeScreenTheme.autocompleteLoading
-const reverseGradationHighlightColor = homeScreenTheme.linkText
+const reverseGradationHighlightColor = homeScreenTheme.errorText
 const defaultAsciiFontColor = homeScreenTheme.linkText
 
 export function GradationHeader({
@@ -72,9 +72,9 @@ function HighlightedGradationText({
   const gradationInfo =
     gradation?.strong && gradation?.weak
       ? gradation.strongStart !== undefined
-        ? ` (${gradation.strong} -> ${gradation.weak})`
+        ? ` (${gradation.strong} → ${gradation.weak})`
         : gradation.weakStart !== undefined
-          ? ` (${gradation.strong} <- ${gradation.weak})`
+          ? ` (${gradation.strong} ← ${gradation.weak})`
           : ""
       : ""
 
@@ -137,7 +137,7 @@ function splitGradeByPosition(
   const end = start + search.length
 
   if (value.slice(start, end) !== search) {
-    return [{ value, highlight: false }]
+    return splitGradeBySearch(value, gradation, type)
   }
 
   if (type === "weak" && opposite) {

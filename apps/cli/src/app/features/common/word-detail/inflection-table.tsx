@@ -25,13 +25,13 @@ const nounCaseDisplayOrder: Array<{ caseName: FinnishNominalCase; label: string 
   { caseName: "partitive", label: "Partitive" },
   { caseName: "genitive", label: "Genitive" },
   "spacer",
-  { caseName: "illative", label: "Illative (S-Mihin)" },
-  { caseName: "inessive", label: "Inessive (S-Missä)" },
-  { caseName: "elative", label: "Elative  (S-Mistä)" },
+  { caseName: "illative", label: "Illative (S-Mihin) ⇢□ " },
+  { caseName: "inessive", label: "Inessive (S-Missä)  ▣ " },
+  { caseName: "elative", label: "Elative  (S-Mistä)  □⇢" },
   "spacer",
-  { caseName: "allative", label: "Allative (L-Mihin)" },
-  { caseName: "adessive", label: "Adessive (L-Millä)" },
-  { caseName: "ablative", label: "Ablative (L-Miltä)" },
+  { caseName: "allative", label: "Allative (L-Mihin) ⇢▁ " },
+  { caseName: "adessive", label: "Adessive (L-Millä) ●▁ " },
+  { caseName: "ablative", label: "Ablative (L-Miltä)  ▁⇢" },
   "spacer",
   { caseName: "essive", label: "Essive" },
   { caseName: "translative", label: "Translative" },
@@ -238,7 +238,10 @@ function renderVerbPersonRows(
 }
 
 function CaseTable({ rows }: { rows: CaseTableRow[] }) {
-  const caseColumnWidth = 22
+  const caseColumnWidth = Math.max(
+    24,
+    ...rows.filter((row): row is CaseRow => row !== "spacer").map((row) => row.name.length + 1),
+  )
   const singularColumnWidth = 20
 
   return (
