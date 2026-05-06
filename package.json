@@ -9,6 +9,7 @@
   "scripts": {
     "dev:server": "bun run --filter @puhutko/server dev",
     "dev:cli": "bun run --cwd apps/cli dev",
+    "dev:landing": "bun run --cwd apps/landing dev",
     "check": "bun run --filter @puhutko/shared check && bun run --filter @puhutko/sqlite check && bun run --filter @puhutko/recent-searches check && bun run --filter @puhutko/word-example check && bun run --filter @puhutko/word-tags check && bun run --filter @puhutko/wiktionary check && bun run --filter @puhutko/kaikki check && bun run --filter @puhutko/server check && bun run --cwd apps/cli check"
   }
 }
