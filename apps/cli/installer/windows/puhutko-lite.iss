@@ -25,7 +25,7 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 Name: "startmenuicon"; Description: "Create a Start Menu shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
 
 [Files]
-Source: "apps\cli\dist\puhutko-lite.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\dist\puhutko-lite.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\Puhutko Lite"; Filename: "{app}\puhutko-lite.exe"; Tasks: startmenuicon
