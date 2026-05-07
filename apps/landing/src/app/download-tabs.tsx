@@ -54,9 +54,9 @@ export function DownloadTabs() {
         <article className="install-card" role="tabpanel">
           <h3>macOS Apple Silicon</h3>
           <ol>
-            <li>Tap the Homebrew source.</li>
-            <li>Install the app.</li>
-            <li>Run it from your terminal.</li>
+            <li>Tap the Homebrew source</li>
+            <li>Install the app</li>
+            <li>Run it from your terminal</li>
           </ol>
           <pre>
             <code>{`brew tap phhien203/puhutko-lite
@@ -69,13 +69,13 @@ puhutko-lite`}</code>
           <h3>Windows x64</h3>
           <ol>
             <li>
-              Download <a href={windowsDownloadUrl}>puhutko-lite-windows-x64.zip</a> directly.
+              Download <a href={windowsDownloadUrl}>puhutko-lite-windows-x64.zip</a> directly
             </li>
-            <li>Extract the ZIP archive.</li>
+            <li>Extract the ZIP archive</li>
             <li>
-              Run <code>PuhutkoLite-Setup.exe</code>.
+              Run <code>PuhutkoLite-Setup.exe</code>
             </li>
-            <li>Open a new CMD or PowerShell window.</li>
+            <li>Open a new CMD or PowerShell window</li>
             <li>
               Run <code>puhutko-lite</code>
             </li>

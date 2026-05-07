@@ -56,9 +56,14 @@ a {
 
 .hero-content {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  gap: var(--space-5);
-  align-items: center;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  justify-items: center;
+  text-align: center;
+}
+
+.hero-copy {
+  width: 100%;
 }
 
 .eyebrow {
@@ -88,11 +93,17 @@ h1 {
 }
 
 .lead {
-  margin: var(--space-3) 0 var(--space-4);
+  margin: var(--space-3) auto var(--space-4);
   color: var(--text-muted);
   max-width: 56ch;
   font-size: clamp(1.2rem, 2.2vw, 1.55rem);
   line-height: 1.65;
+}
+
+.lead-primary {
+  font-size: clamp(1.45rem, 2.8vw, 2rem);
+  font-weight: 700;
+  color: var(--text-main);
 }
 
 .button {
@@ -138,22 +149,7 @@ h1 {
 }
 
 .card {
-  display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-  gap: var(--space-4);
-  align-items: center;
-}
-
-.card.is-reversed {
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-}
-
-.card.is-reversed .feature-copy {
-  order: 2;
-}
-
-.card.is-reversed .feature-video {
-  order: 1;
+  display: block;
 }
 
 .feature-copy {
@@ -162,10 +158,6 @@ h1 {
 
 .feature-copy h3 {
   font-size: clamp(1.45rem, 2.8vw, 1.95rem);
-}
-
-.feature-video {
-  width: 100%;
 }
 
 .card h3,
@@ -185,6 +177,18 @@ h1 {
   line-height: 1.55;
 }
 
+.reason-list {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.25rem;
+  color: var(--text-muted);
+  display: grid;
+  gap: 0.4rem;
+}
+
+.reason-list li {
+  line-height: 1.55;
+}
+
 .install-card a {
   color: var(--accent);
   font-weight: 700;
@@ -195,9 +199,9 @@ h1 {
 }
 
 .hero-video {
-  margin-left: auto;
+  margin: 0 auto;
   width: 100%;
-  max-width: none;
+  max-width: 56rem;
 }
 
 .video-placeholder {
@@ -311,7 +315,4 @@ code {
     max-width: none;
   }
 
-  .card {
-    grid-template-columns: 1fr;
-  }
 }

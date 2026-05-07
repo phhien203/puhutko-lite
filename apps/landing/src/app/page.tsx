@@ -6,24 +6,32 @@ const repositoryUrl = "https://github.com/phhien203/puhutko-lite"
 const valueProps = [
   {
     title: "Fast keyboard-driven lookups",
-    description: "Search and inspect Finnish words without leaving your terminal flow",
-    demoHint: "Show a quick lookup flow demo here."
+    points: [
+      "Search and inspect Finnish words without leaving your terminal flow",
+      "Keep momentum while studying with instant keyboard-first navigation",
+    ],
   },
   {
     title: "Learning feedback and pattern visibility",
-    description: "Surface inflections and recurring structures that help you recognize patterns faster",
-    demoHint: "Show inflection and pattern feedback in this demo."
+    points: [
+      "Surface inflections and recurring structures at a glance",
+      "Recognize word patterns faster through consistent visual feedback",
+    ],
   },
   {
     title: "Word variation coverage",
-    description: "Explore multiple word forms and related variants in one compact interface: Finnish cases, KPT gradations",
-    demoHint: "Show switching between related word variants."
+    points: [
+      "Explore multiple word forms and related variants in one compact view",
+      "Review Finnish cases and KPT changes side by side",
+    ],
   },
   {
-    title: "Notes, tags, and example support",
-    description: "Attach your own context to words with notes, tags, and practical example sentences",
-    demoHint: "Show notes/tags/example editing in this slot."
-  }
+    title: "Tags and example support",
+    points: [
+      "Attach personal context to words with tags",
+      "Store your own practical example sentences for quick review",
+    ],
+  },
 ]
 
 export default function Home() {
@@ -31,12 +39,13 @@ export default function Home() {
     <main className="page">
       <section className="hero">
         <div className="hero-content">
-          <div>
-            <h1>puhutko-lite</h1>
-            <p className="eyebrow">Terminal-first Finnish learning</p>
+          <div className="hero-copy">
             <p className="lead">
-              An interactive terminal dictionary that helps you look up Finnish words quickly, understand their
-              forms, and keep your own study context close to every entry.
+              <span className="lead-primary">
+                Interactive Finnish dictionary with command line interface
+              </span>
+              <br />
+              Learn Finnish like a hacker
             </p>
           </div>
           <div className="video-shell hero-video">
@@ -51,17 +60,15 @@ export default function Home() {
       <section className="section">
         <h2>Why do you love it</h2>
         <div className="grid">
-          {valueProps.map((item, index) => (
-            <article className={`card ${index % 2 === 1 ? "is-reversed" : ""}`} key={item.title}>
+          {valueProps.map((item) => (
+            <article className="card" key={item.title}>
               <div className="feature-copy">
                 <h3>{item.title}</h3>
-                <p>{item.description}</p>
-              </div>
-              <div className="video-shell feature-video">
-                <div className="video-placeholder">
-                  <p className="video-label">Feature demo placeholder</p>
-                  <p className="video-help">{item.demoHint}</p>
-                </div>
+                <ul className="reason-list">
+                  {item.points.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
               </div>
             </article>
           ))}
