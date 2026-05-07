@@ -12,17 +12,10 @@ const valueProps = [
     ],
   },
   {
-    title: "Learning feedback and pattern visibility",
-    points: [
-      "Surface inflections and recurring structures at a glance",
-      "Recognize word patterns faster through consistent visual feedback",
-    ],
-  },
-  {
     title: "Word variation coverage",
     points: [
       "Explore multiple word forms and related variants in one compact view",
-      "Review Finnish cases and KPT changes side by side",
+      "Review Finnish cases, verb conjugations and KPT changes side by side",
     ],
   },
   {
@@ -40,25 +33,28 @@ export default function Home() {
       <section className="hero">
         <div className="hero-content">
           <div className="hero-copy">
-            <p className="lead">
-              <span className="lead-primary">
-                Interactive Finnish dictionary with command line interface
-              </span>
-              <br />
-              Learn Finnish like a hacker
-            </p>
+            <h1 className="lead-primary">
+              Interactive Finnish dictionary with command line interface
+            </h1>
           </div>
           <div className="video-shell hero-video">
-            <div className="video-placeholder">
-              <p className="video-label">Demo video placeholder</p>
-              <p className="video-help">Drop your video embed or player component here later.</p>
-            </div>
+            <video
+              className="video-player"
+              src="/demo.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              preload="metadata"
+              aria-label="Puhutko Lite demo video"
+            />
           </div>
         </div>
       </section>
 
       <section className="section">
-        <h2>Why do you love it</h2>
+        <h2>Key Features</h2>
         <div className="grid">
           {valueProps.map((item) => (
             <article className="card" key={item.title}>
@@ -76,7 +72,7 @@ export default function Home() {
       </section>
 
       <section id="install" className="section">
-        <h2>Install</h2>
+        <h2>How to Install</h2>
         <DownloadTabs />
       </section>
 

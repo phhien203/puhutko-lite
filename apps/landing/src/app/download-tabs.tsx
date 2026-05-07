@@ -52,7 +52,6 @@ export function DownloadTabs() {
 
       {activeTab === "macos" ? (
         <article className="install-card" role="tabpanel">
-          <h3>macOS Apple Silicon</h3>
           <ol>
             <li>Tap the Homebrew source</li>
             <li>Install the app</li>
@@ -66,7 +65,6 @@ puhutko-lite`}</code>
         </article>
       ) : (
         <article className="install-card" role="tabpanel">
-          <h3>Windows x64</h3>
           <ol>
             <li>
               Download <a href={windowsDownloadUrl}>puhutko-lite-windows-x64.zip</a> directly
