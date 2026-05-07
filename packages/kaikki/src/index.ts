@@ -442,6 +442,12 @@ function mapPartOfSpeech(pos: string | undefined): PartOfSpeech {
     case "numeral":
     case "particle":
       return pos
+    case "proper noun":
+    case "proper-noun":
+    case "proper_noun":
+    case "propn":
+    case "name":
+      return "noun"
     case "postposition":
     case "postp":
       return "postposition"
