@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useQueryClient } from "@tanstack/react-query"
 import { findNextJumpMatch, type WordExplorerSortMode } from "@puhutko/word-tags"
 import React from "react"
-import { useOutletContext, useSearchParams } from "react-router"
+import { useNavigate, useOutletContext, useSearchParams } from "react-router"
 
 import type { RootLayoutOutletContext } from "../../root-layout.types"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
@@ -73,6 +73,7 @@ export function WordExplorer() {
   const dialog = useDialog()
   const isDialogOpen = useDialogState((state) => state.isOpen)
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const { setAutocompleteActive, setToggleSidebarShortcutHandler } =
     useOutletContext<RootLayoutOutletContext>()
   const { width } = useTerminalDimensions()
@@ -219,6 +220,11 @@ export function WordExplorer() {
         const nextIndex = (currentIndex + delta + order.length) % order.length
         return order[nextIndex] ?? "details"
       })
+      return
+    }
+
+    if (key.name === "escape") {
+      navigate("/")
       return
     }
 
