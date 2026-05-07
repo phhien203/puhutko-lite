@@ -154,6 +154,14 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
     }
   }, [detail.id, queryClient, selectedTag, toggleTagAssignmentMutation])
 
+  const invalidateTagQueries = React.useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.wordTags(detail.id) }),
+      queryClient.invalidateQueries({ queryKey: ["word-tags"] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.wordExplorerTags() }),
+    ])
+  }, [detail.id, queryClient])
+
   const handleCreateTag = React.useCallback(async () => {
     const createdTagId = await dialog.prompt<string>({
       content: (context) => (
@@ -172,9 +180,9 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
 
     if (createdTagId) {
       setPreferredTagId(createdTagId)
-      await queryClient.invalidateQueries({ queryKey: queryKeys.wordTags(detail.id) })
+      await invalidateTagQueries()
     }
-  }, [createTagMutation.mutateAsync, detail.id, detail.word, dialog, queryClient])
+  }, [createTagMutation.mutateAsync, detail.word, dialog, invalidateTagQueries])
 
   const handleRenameTag = React.useCallback(async () => {
     if (!selectedTag) {
@@ -198,9 +206,9 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
 
     if (renamedTagId) {
       setPreferredTagId(renamedTagId)
-      await queryClient.invalidateQueries({ queryKey: queryKeys.wordTags(detail.id) })
+      await invalidateTagQueries()
     }
-  }, [detail.id, dialog, queryClient, renameTagMutation, selectedTag])
+  }, [dialog, invalidateTagQueries, renameTagMutation, selectedTag])
 
   const handleDeleteTag = React.useCallback(async () => {
     if (!selectedTag) {
@@ -225,11 +233,11 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
 
     try {
       await deleteTagMutation.mutateAsync(selectedTag.tag.id)
-      await queryClient.invalidateQueries({ queryKey: queryKeys.wordTags(detail.id) })
+      await invalidateTagQueries()
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to delete tag.")
     }
-  }, [deleteTagMutation, detail.id, dialog, queryClient, selectedTag])
+  }, [deleteTagMutation, dialog, invalidateTagQueries, selectedTag])
 
   useDialogKeyboard((key) => {
     if (key.name === "escape") {
