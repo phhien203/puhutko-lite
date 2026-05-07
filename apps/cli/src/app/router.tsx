@@ -17,7 +17,7 @@ export const routes: AppRouteMeta[] = [
   {
     path: "/",
     label: "Home",
-    shortcut: "h",
+    shortcut: "g",
     element: <WordSearch />,
   },
   {

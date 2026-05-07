@@ -19,7 +19,10 @@ export function RootLayout({ routes }: RootLayoutProps) {
   const toggleSidebarShortcutHandlerRef = React.useRef<(() => void) | null>(null)
 
   const activeRoute = routes.find((route) => route.path === location.pathname)
-  const footerHints = "Ctrl+h Word Search   Ctrl+x Word Explorer   Ctrl+b Toggle Sidebar   Ctrl+c Quit"
+  const footerHints =
+    activeRoute?.path === "/word-explorer"
+      ? "Ctrl+g/Esc Word Search   Ctrl+b Toggle Sidebar   Ctrl+c Quit"
+      : "Ctrl+x Word Explorer   Ctrl+b Toggle Sidebar   Ctrl+c Quit"
   const footerCredits = "Made with ♥︎ by Hien Pham"
   const setToggleSidebarShortcutHandler = React.useCallback((handler: (() => void) | null) => {
     toggleSidebarShortcutHandlerRef.current = handler

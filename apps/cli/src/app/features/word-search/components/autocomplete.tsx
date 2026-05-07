@@ -257,7 +257,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
     }
 
     const shouldAllowGlobalShortcutBubbling =
-      key.ctrl && !key.meta && !key.option && ["b", "c", "h", "x"].includes(key.name)
+      key.ctrl && !key.meta && !key.option && ["b", "c", "g", "x"].includes(key.name)
 
     if (shouldAllowGlobalShortcutBubbling) {
       return
