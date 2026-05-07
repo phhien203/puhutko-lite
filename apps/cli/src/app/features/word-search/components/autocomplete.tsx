@@ -256,6 +256,13 @@ export function Autocomplete<T extends { label: string; value: string }>({
       return
     }
 
+    const shouldAllowGlobalShortcutBubbling =
+      key.ctrl && !key.meta && !key.option && ["b", "c", "h", "x"].includes(key.name)
+
+    if (shouldAllowGlobalShortcutBubbling) {
+      return
+    }
+
     if (key.name === "up" && isOpen && visibleItems.length > 0) {
       setHighlightedIndex((currentIndex) =>
         currentIndex === null || currentIndex === 0

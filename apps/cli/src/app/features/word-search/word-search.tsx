@@ -10,6 +10,7 @@ import type { WiktionarySearchItem } from "@puhutko/shared"
 import { searchFinnishWiktionaryEntries } from "@puhutko/wiktionary"
 import { recentSearchesService } from "../../persistence"
 import { queryKeys } from "../../query/query-keys"
+import type { RootLayoutOutletContext } from "../../root-layout.types"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
 import { DetailsView } from "../common/details-view"
 import { WordExampleDialog } from "../common/word-example/word-example-dialog"
@@ -20,7 +21,7 @@ import { RecentSearches } from "./components/recent-searches"
 import { NARROW_TERMINAL_WIDTH, SIDEBAR_WIDTH } from "./word-search.constants"
 import { recentSearchesQueryOptions } from "./word-search.queries"
 import { initialWordSearchState, wordSearchReducer } from "./word-search.reducer"
-import type { TagsManagerDialogWord, WordSearchOutletContext } from "./word-search.types"
+import type { TagsManagerDialogWord } from "./word-search.types"
 
 function toSearchItem(item: RecentSearch): WiktionarySearchItem {
   return {
@@ -35,7 +36,8 @@ export function WordSearch() {
   const dialog = useDialog()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const { setAutocompleteActive } = useOutletContext<WordSearchOutletContext>()
+  const { setAutocompleteActive, setToggleSidebarShortcutHandler } =
+    useOutletContext<RootLayoutOutletContext>()
   const { width } = useTerminalDimensions()
   const isDialogOpen = useDialogState((state) => state.isOpen)
   const recentSearchesQueryKey = queryKeys.recentSearches(RECENT_SEARCH_LIMIT)
@@ -178,6 +180,16 @@ export function WordSearch() {
   }, [setAutocompleteActive])
 
   React.useEffect(() => {
+    setToggleSidebarShortcutHandler(() => {
+      dispatch({ type: "sidebar/toggle", isNarrowTerminal })
+    })
+
+    return () => {
+      setToggleSidebarShortcutHandler(null)
+    }
+  }, [isNarrowTerminal, setToggleSidebarShortcutHandler])
+
+  React.useEffect(() => {
     if (recentSearches.length === 0) {
       setRecentSelectedIndex(null)
       return
@@ -250,9 +262,6 @@ export function WordSearch() {
       return
     }
 
-    if (key.name === "b" && !key.shift && !key.ctrl && !key.meta && !key.option) {
-      dispatch({ type: "sidebar/toggle", isNarrowTerminal })
-    }
   })
 
   return (

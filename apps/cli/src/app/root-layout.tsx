@@ -3,6 +3,7 @@ import { useKeyboard, useRenderer } from "@opentui/react"
 import React from "react"
 import { Outlet, useLocation, useNavigate } from "react-router"
 import { draculaColors } from "./theme/colors"
+import type { RootLayoutOutletContext } from "./root-layout.types"
 import type { AppRouteMeta } from "./router"
 
 type RootLayoutProps = {
@@ -15,18 +16,34 @@ export function RootLayout({ routes }: RootLayoutProps) {
   const renderer = useRenderer()
   const isDialogOpen = useDialogState((state) => state.isOpen)
   const [isAutocompleteActive, setIsAutocompleteActive] = React.useState(false)
+  const toggleSidebarShortcutHandlerRef = React.useRef<(() => void) | null>(null)
 
   const activeRoute = routes.find((route) => route.path === location.pathname)
-  const footerHints = routes.map((route) => `[${route.shortcut}] ${route.label}`).join("   ")
+  const footerHints = "Ctrl+h Word Search   Ctrl+x Word Explorer   Ctrl+b Toggle Sidebar   Ctrl+c Quit"
   const footerCredits = "Made with ♥︎ by Hien Pham"
+  const setToggleSidebarShortcutHandler = React.useCallback((handler: (() => void) | null) => {
+    toggleSidebarShortcutHandlerRef.current = handler
+  }, [])
 
   useKeyboard((key) => {
-    if (isAutocompleteActive || isDialogOpen) {
+    if (isDialogOpen) {
       return
     }
 
-    if (key.name === "q") {
+    const isCtrlShortcut = key.ctrl && !key.meta && !key.option
+    const isRouteShortcut = routes.some((route) => route.shortcut === key.name)
+
+    if (!isCtrlShortcut || (isAutocompleteActive && key.name !== "c" && key.name !== "b" && !isRouteShortcut)) {
+      return
+    }
+
+    if (key.name === "c") {
       renderer.destroy()
+      return
+    }
+
+    if (key.name === "b") {
+      toggleSidebarShortcutHandlerRef.current?.()
       return
     }
 
@@ -47,7 +64,12 @@ export function RootLayout({ routes }: RootLayoutProps) {
       backgroundColor={draculaColors.background2}
     >
       <box padding={0} flexGrow={1} minHeight={0}>
-        <Outlet context={{ setAutocompleteActive: setIsAutocompleteActive }} />
+        <Outlet
+          context={{
+            setAutocompleteActive: setIsAutocompleteActive,
+            setToggleSidebarShortcutHandler,
+          } satisfies RootLayoutOutletContext}
+        />
       </box>
 
       <box
@@ -59,10 +81,7 @@ export function RootLayout({ routes }: RootLayoutProps) {
         alignItems="center"
       >
         <box flexGrow={1} minWidth={0}>
-          <text>
-            {footerHints}
-            {"   "}[b] Sidebar{"   "}[Tab] Next{"   "}[q] Quit
-          </text>
+          <text>{footerHints}</text>
         </box>
         <box flexShrink={0} marginLeft={2}>
           <text>{footerCredits}</text>

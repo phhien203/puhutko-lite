@@ -7,13 +7,13 @@ import React from "react"
 import { useOutletContext, useSearchParams } from "react-router"
 
 import type { WordDetail } from "@puhutko/shared"
+import type { RootLayoutOutletContext } from "../../root-layout.types"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
 import { WordExampleDialog } from "../common/word-example/word-example-dialog"
 import { wordDetailQueryOptions } from "../common/details-view.queries"
 import { WordDetailView } from "../common/word-detail/word-detail"
 import { wordExampleQueryOptions } from "../common/word-detail/word-detail.queries"
 import { NARROW_TERMINAL_WIDTH, SIDEBAR_WIDTH } from "../word-search/word-search.constants"
-import type { WordSearchOutletContext } from "../word-search/word-search.types"
 import {
   wordExplorerTagsQueryOptions,
   wordExplorerWordsQueryOptions,
@@ -75,7 +75,7 @@ export function WordExplorer() {
   const dialog = useDialog()
   const isDialogOpen = useDialogState((state) => state.isOpen)
   const queryClient = useQueryClient()
-  const { setAutocompleteActive } = useOutletContext<WordSearchOutletContext>()
+  const { setAutocompleteActive } = useOutletContext<RootLayoutOutletContext>()
   const { width } = useTerminalDimensions()
   const [searchParams, setSearchParams] = useSearchParams()
   const tagsQuery = useQuery(wordExplorerTagsQueryOptions())

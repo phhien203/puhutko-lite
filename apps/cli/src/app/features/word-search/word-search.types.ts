@@ -1,9 +1,5 @@
 import { WordDetail } from "@puhutko/shared"
 
-export type WordSearchOutletContext = {
-  setAutocompleteActive: (active: boolean) => void
-}
-
 export type FocusTarget = "autocomplete" | "recent" | "details"
 
 export type WordSearchState = {
