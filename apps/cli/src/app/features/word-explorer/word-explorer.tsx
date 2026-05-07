@@ -398,7 +398,7 @@ export function WordExplorer() {
                       backgroundColor={isSelected ? draculaColors.purple : undefined}
                     >
                       <text>
-                        <strong>{isActive ? "[✔︎]" : "[ ]"}</strong> {tag.name}
+                        <strong>{isActive ? "[*]" : "[ ]"}</strong> {tag.name}
                       </text>
                     </box>
                   )

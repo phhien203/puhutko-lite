@@ -361,7 +361,7 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
                 backgroundColor={isSelected ? draculaColors.purple : undefined}
               >
                 <text>
-                  <strong>{item.assigned ? "[✔︎]" : "[ ]"}</strong> <span>{item.tag.name}</span>
+                  <strong>{item.assigned ? "[*]" : "[ ]"}</strong> <span>{item.tag.name}</span>
                 </text>
               </box>
             )
