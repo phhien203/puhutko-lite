@@ -1,5 +1,7 @@
+import type { ScrollBoxRenderable } from "@opentui/core"
 import { useKeyboard } from "@opentui/react"
 import type { WiktionarySearchItem } from "@puhutko/shared"
+import React from "react"
 import { draculaColors, homeScreenTheme } from "../../../theme/colors"
 
 type RecentSearchesProps = {
@@ -18,6 +20,15 @@ export function RecentSearches({
   focused = false,
 }: RecentSearchesProps) {
   const backgroundColor = focused ? homeScreenTheme.panelFocusedBackground : draculaColors.background
+  const scrollboxRef = React.useRef<ScrollBoxRenderable | null>(null)
+
+  React.useEffect(() => {
+    if (selectedIndex === null || !items[selectedIndex]) {
+      return
+    }
+
+    scrollboxRef.current?.scrollChildIntoView(`recent-item-${selectedIndex}`)
+  }, [items, selectedIndex])
 
   useKeyboard((key) => {
     if (!focused || items.length === 0) {
@@ -27,6 +38,9 @@ export function RecentSearches({
     if (key.name !== "up" && key.name !== "down") {
       return
     }
+
+    key.preventDefault()
+    key.stopPropagation()
 
     const nextIndex =
       key.name === "up"
@@ -60,11 +74,12 @@ export function RecentSearches({
         <strong>Recent searches</strong>
       </text>
 
-      <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focused}>
+      <scrollbox ref={scrollboxRef} width="100%" flexGrow={1} minHeight={0} focused={focused}>
         <box width="100%" flexDirection="column">
           {items.map((item, index) => (
             <box
               key={item.value}
+              id={`recent-item-${index}`}
               width="100%"
               paddingX={2}
               backgroundColor={

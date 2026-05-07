@@ -1,4 +1,5 @@
 import { useDialog, useDialogState } from "@opentui-ui/dialog/react"
+import type { ScrollBoxRenderable } from "@opentui/core"
 import { useKeyboard, useTerminalDimensions } from "@opentui/react"
 import { useQuery } from "@tanstack/react-query"
 import { useQueryClient } from "@tanstack/react-query"
@@ -89,6 +90,8 @@ export function WordExplorer() {
   const [selectedDetail, setSelectedDetail] = React.useState<{ id: string; word: string } | null>(null)
   const [isFetchingDifferentSelection, setIsFetchingDifferentSelection] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
+  const tagsScrollboxRef = React.useRef<ScrollBoxRenderable | null>(null)
+  const wordsScrollboxRef = React.useRef<ScrollBoxRenderable | null>(null)
 
   const tags = tagsQuery.data ?? []
   const wordsQuery = useQuery({
@@ -183,12 +186,28 @@ export function WordExplorer() {
   }, [tagSelectedIndex, tags.length])
 
   React.useEffect(() => {
+    if (!isSidebarVisible || !tags[tagSelectedIndex]) {
+      return
+    }
+
+    tagsScrollboxRef.current?.scrollChildIntoView(`tag-item-${tagSelectedIndex}`)
+  }, [isSidebarVisible, tagSelectedIndex, tags])
+
+  React.useEffect(() => {
     if (wordSelectedIndex < words.length) {
       return
     }
 
     setWordSelectedIndex(Math.max(0, words.length - 1))
   }, [wordSelectedIndex, words.length])
+
+  React.useEffect(() => {
+    if (!isSidebarVisible || !words[wordSelectedIndex]) {
+      return
+    }
+
+    wordsScrollboxRef.current?.scrollChildIntoView(`word-item-${wordSelectedIndex}`)
+  }, [isSidebarVisible, wordSelectedIndex, words])
 
   const toggleSelectedTag = React.useCallback(() => {
     const tag = tags[tagSelectedIndex]
@@ -260,11 +279,15 @@ export function WordExplorer() {
 
     if (focusTarget === "tags" && isSidebarVisible) {
       if (key.name === "up") {
+        key.preventDefault()
+        key.stopPropagation()
         setTagSelectedIndex((currentIndex) => getNextIndex(currentIndex, -1, tags.length))
         return
       }
 
       if (key.name === "down") {
+        key.preventDefault()
+        key.stopPropagation()
         setTagSelectedIndex((currentIndex) => getNextIndex(currentIndex, 1, tags.length))
         return
       }
@@ -290,11 +313,15 @@ export function WordExplorer() {
 
     if (focusTarget === "words" && isSidebarVisible) {
       if (key.name === "up") {
+        key.preventDefault()
+        key.stopPropagation()
         setWordSelectedIndex((currentIndex) => getNextIndex(currentIndex, -1, words.length))
         return
       }
 
       if (key.name === "down") {
+        key.preventDefault()
+        key.stopPropagation()
         setWordSelectedIndex((currentIndex) => getNextIndex(currentIndex, 1, words.length))
         return
       }
@@ -338,7 +365,13 @@ export function WordExplorer() {
               <strong>Tags</strong>
               <span fg={homeScreenTheme.mutedText}>  [Space] Toggle</span>
             </text>
-            <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focusTarget === "tags"}>
+            <scrollbox
+              ref={tagsScrollboxRef}
+              width="100%"
+              flexGrow={1}
+              minHeight={0}
+              focused={focusTarget === "tags"}
+            >
               <box width="100%" flexDirection="column">
                 {tags.map((tag, index) => {
                   const isSelected = index === tagSelectedIndex
@@ -347,6 +380,7 @@ export function WordExplorer() {
                   return (
                     <box
                       key={tag.id}
+                      id={`tag-item-${index}`}
                       width="100%"
                       paddingX={2}
                       backgroundColor={isSelected ? draculaColors.purple : undefined}
@@ -373,7 +407,13 @@ export function WordExplorer() {
                 {`  [Ctrl+S] Sort: ${sortMode === "alphabetical" ? "A-Z" : "Added"}`}
               </span>
             </text>
-            <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focusTarget === "words"}>
+            <scrollbox
+              ref={wordsScrollboxRef}
+              width="100%"
+              flexGrow={1}
+              minHeight={0}
+              focused={focusTarget === "words"}
+            >
               <box width="100%" flexDirection="column">
                 {words.map((item, index) => {
                   const isSelected = index === wordSelectedIndex
@@ -381,6 +421,7 @@ export function WordExplorer() {
                   return (
                     <box
                       key={item.wordId}
+                      id={`word-item-${index}`}
                       width="100%"
                       paddingX={2}
                       backgroundColor={isSelected ? draculaColors.purple : undefined}
