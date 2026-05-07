@@ -93,7 +93,9 @@ export function InflectionTable({ detail }: { detail: WordDetail }) {
   return (
     <box width="100%" flexDirection="column" gap={1}>
       <text>
-        <strong>Inflections</strong>
+        <strong>
+          <span fg={homeScreenTheme.sectionHeaderText}>Inflections</span>
+        </strong>
       </text>
 
       {caseRows.length > 0 ? <CaseTable rows={caseRows} /> : null}
@@ -117,7 +119,9 @@ function VerbInflections({ forms }: { forms: InflectionForm[] }) {
   return (
     <box width="100%" flexDirection="column" gap={1}>
       <text>
-        <strong>Inflections</strong>
+        <strong>
+          <span fg={homeScreenTheme.sectionHeaderText}>Inflections</span>
+        </strong>
       </text>
       {hasVerbForms ? (
         <box width="100%" flexDirection="column" gap={1}>

@@ -24,5 +24,6 @@ export const homeScreenTheme = {
   recentSearchFocusedForeground: draculaColors.foreground,
   mutedText: draculaColors.comment,
   linkText: draculaColors.cyan,
+  sectionHeaderText: draculaColors.yellow,
   errorText: draculaColors.red,
 } as const
