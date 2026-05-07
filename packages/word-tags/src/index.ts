@@ -11,6 +11,7 @@ export {
   type Tag,
   type TagNameValidationResult,
   type TagWithAssignment,
+  type TagWithWordCount,
   type WordExplorerSortMode,
   type WordExplorerWord,
   type WordTagLink,

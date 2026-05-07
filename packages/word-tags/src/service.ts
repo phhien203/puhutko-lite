@@ -1,6 +1,6 @@
 import type { WordTagsRepository } from "./repository"
 import { sortTagsAlphabetically } from "./sorting"
-import type { Tag, WordExplorerSortMode, WordExplorerWord, WordTagsService } from "./types"
+import type { Tag, TagWithWordCount, WordExplorerSortMode, WordExplorerWord, WordTagsService } from "./types"
 import { validateTagName } from "./validation"
 
 function assertTagFound(tag: Tag | null, tagId: string): Tag {
@@ -40,7 +40,20 @@ export function createWordTagsService(repository: WordTagsRepository): WordTagsS
     },
     async listTags() {
       const tags = await repository.listTags()
-      return sortTagsAlphabetically(tags)
+      const sortedTags = sortTagsAlphabetically(tags)
+      const links = await repository.listWordTagLinksForTagIds(sortedTags.map((tag) => tag.id))
+      const countsByTagId = new Map<string, number>()
+
+      for (const link of links) {
+        countsByTagId.set(link.tagId, (countsByTagId.get(link.tagId) ?? 0) + 1)
+      }
+
+      return sortedTags.map(
+        (tag): TagWithWordCount => ({
+          ...tag,
+          wordCount: countsByTagId.get(tag.id) ?? 0,
+        }),
+      )
     },
     async listWordsForTagIntersection(selectedTagIds, sortMode) {
       if (selectedTagIds.length === 0) {

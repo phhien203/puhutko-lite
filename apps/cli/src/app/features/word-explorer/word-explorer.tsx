@@ -397,8 +397,8 @@ export function WordExplorer() {
                       paddingX={2}
                       backgroundColor={isSelected ? draculaColors.purple : undefined}
                     >
-                      <text>
-                        <strong>{isActive ? "[*]" : "[ ]"}</strong> {tag.name}
+                      <text fg={isActive ? draculaColors.yellow : undefined}>
+                        {isActive ? <strong>{`[*] ${tag.name} (${tag.wordCount})`}</strong> : `[ ] ${tag.name} (${tag.wordCount})`}
                       </text>
                     </box>
                   )
@@ -416,7 +416,7 @@ export function WordExplorer() {
             <text marginX={2} marginY={1}>
               <strong>Words</strong>
               <span fg={homeScreenTheme.mutedText}>
-                {`  [Ctrl+S] Sort: ${sortMode === "alphabetical" ? "A-Z" : "Added"}`}
+                {`  [Ctrl+S] Sorting by ${sortMode === "alphabetical" ? "A-Z" : "Added"}`}
               </span>
             </text>
             <scrollbox

@@ -31,13 +31,17 @@ export type TagWithAssignment = {
   assigned: boolean
 }
 
+export type TagWithWordCount = Tag & {
+  wordCount: number
+}
+
 export type TagNameValidationResult =
   | { ok: true; value: NormalizedTagName }
   | { ok: false; message: string }
 
 export type WordTagsService = {
   listTagsForWord(wordId: string): Promise<TagWithAssignment[]>
-  listTags(): Promise<Tag[]>
+  listTags(): Promise<TagWithWordCount[]>
   listWordsForTagIntersection(
     selectedTagIds: string[],
     sortMode: WordExplorerSortMode,

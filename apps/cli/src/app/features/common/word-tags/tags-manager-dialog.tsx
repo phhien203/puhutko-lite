@@ -360,8 +360,8 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
                 paddingX={1}
                 backgroundColor={isSelected ? draculaColors.purple : undefined}
               >
-                <text>
-                  <strong>{item.assigned ? "[*]" : "[ ]"}</strong> <span>{item.tag.name}</span>
+                <text fg={item.assigned ? draculaColors.yellow : undefined}>
+                  {item.assigned ? <strong>{`[*] ${item.tag.name}`}</strong> : `[ ] ${item.tag.name}`}
                 </text>
               </box>
             )
