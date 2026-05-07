@@ -6,12 +6,10 @@ import { findNextJumpMatch, type WordExplorerSortMode } from "@puhutko/word-tags
 import React from "react"
 import { useOutletContext, useSearchParams } from "react-router"
 
-import type { WordDetail } from "@puhutko/shared"
 import type { RootLayoutOutletContext } from "../../root-layout.types"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
+import { DetailsView } from "../common/details-view"
 import { WordExampleDialog } from "../common/word-example/word-example-dialog"
-import { wordDetailQueryOptions } from "../common/details-view.queries"
-import { WordDetailView } from "../common/word-detail/word-detail"
 import { wordExampleQueryOptions } from "../common/word-detail/word-detail.queries"
 import { NARROW_TERMINAL_WIDTH, SIDEBAR_WIDTH } from "../word-search/word-search.constants"
 import {
@@ -75,7 +73,8 @@ export function WordExplorer() {
   const dialog = useDialog()
   const isDialogOpen = useDialogState((state) => state.isOpen)
   const queryClient = useQueryClient()
-  const { setAutocompleteActive } = useOutletContext<RootLayoutOutletContext>()
+  const { setAutocompleteActive, setToggleSidebarShortcutHandler } =
+    useOutletContext<RootLayoutOutletContext>()
   const { width } = useTerminalDimensions()
   const [searchParams, setSearchParams] = useSearchParams()
   const tagsQuery = useQuery(wordExplorerTagsQueryOptions())
@@ -85,6 +84,9 @@ export function WordExplorer() {
   const [tagSelectedIndex, setTagSelectedIndex] = React.useState(0)
   const [wordSelectedIndex, setWordSelectedIndex] = React.useState(0)
   const [focusTarget, setFocusTarget] = React.useState<FocusTarget>("tags")
+  const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(true)
+  const [selectedDetail, setSelectedDetail] = React.useState<{ id: string; word: string } | null>(null)
+  const [isFetchingDifferentSelection, setIsFetchingDifferentSelection] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
 
   const tags = tagsQuery.data ?? []
@@ -95,27 +97,57 @@ export function WordExplorer() {
   const words = wordsQuery.data ?? []
   const selectedWordId = words[wordSelectedIndex]?.wordId ?? null
   const selectedWord = selectedWordId ? getWordFromWordId(selectedWordId) : null
-  const detailQuery = useQuery({
-    ...wordDetailQueryOptions(selectedWord ?? ""),
-    enabled: Boolean(selectedWord),
-    placeholderData: (previousData) => previousData,
-  })
-  const detail: WordDetail | null = detailQuery.data ?? null
+  const detailSelection = selectedWord
+    ? {
+        query: selectedWord,
+        label: selectedWord,
+      }
+    : null
   const isNarrowTerminal = width < NARROW_TERMINAL_WIDTH
-  const isSidebarVisible = !isNarrowTerminal
+  const isSidebarVisible = !isNarrowTerminal && isSidebarExpanded
 
   React.useEffect(() => {
     setAutocompleteActive(false)
   }, [setAutocompleteActive])
 
   React.useEffect(() => {
-    if (!tagsQuery.error && !wordsQuery.error && !detailQuery.error) {
+    setToggleSidebarShortcutHandler(() => {
+      if (isNarrowTerminal) {
+        return
+      }
+
+      setIsSidebarExpanded((currentValue) => !currentValue)
+    })
+
+    return () => {
+      setToggleSidebarShortcutHandler(null)
+    }
+  }, [isNarrowTerminal, setToggleSidebarShortcutHandler])
+
+  React.useEffect(() => {
+    if (isSidebarVisible) {
       return
     }
 
-    const firstError = tagsQuery.error ?? wordsQuery.error ?? detailQuery.error
+    setFocusTarget("details")
+  }, [isSidebarVisible])
+
+  React.useEffect(() => {
+    if (!tagsQuery.error && !wordsQuery.error) {
+      return
+    }
+
+    const firstError = tagsQuery.error ?? wordsQuery.error
     setErrorMessage(firstError instanceof Error ? firstError.message : "Failed to load explorer data.")
-  }, [detailQuery.error, tagsQuery.error, wordsQuery.error])
+  }, [tagsQuery.error, wordsQuery.error])
+
+  const handleSelectionStateChange = React.useCallback(
+    (value: { detail: { id: string; word: string } | null; isFetchingDifferentSelection: boolean }) => {
+      setSelectedDetail(value.detail)
+      setIsFetchingDifferentSelection(value.isFetchingDifferentSelection)
+    },
+    [],
+  )
 
   React.useEffect(() => {
     if (tagsQuery.isPending) {
@@ -179,17 +211,19 @@ export function WordExplorer() {
 
     if (key.name === "tab") {
       setFocusTarget((currentTarget) => {
-        const order: FocusTarget[] = ["tags", "words", "details"]
+        const order: FocusTarget[] = isSidebarVisible
+          ? ["tags", "words", "details"]
+          : ["details"]
         const currentIndex = order.indexOf(currentTarget)
         const delta = key.shift ? -1 : 1
         const nextIndex = (currentIndex + delta + order.length) % order.length
-        return order[nextIndex] ?? "tags"
+        return order[nextIndex] ?? "details"
       })
       return
     }
 
     if (key.ctrl && key.name === "e") {
-      if (!selectedWordId || !detail || detailQuery.isFetching) {
+      if (!selectedWordId || !selectedDetail || isFetchingDifferentSelection) {
         return
       }
 
@@ -200,13 +234,13 @@ export function WordExplorer() {
           await dialog.prompt({
             size: "large",
             content: (context) => (
-              <WordExampleDialog
-                dialogId={context.dialogId}
-                wordId={selectedWordId}
-                word={detail.word}
-                initialValue={wordExample?.text ?? ""}
-                resolve={context.resolve}
-                dismiss={context.dismiss}
+                <WordExampleDialog
+                  dialogId={context.dialogId}
+                  wordId={selectedWordId}
+                  word={selectedDetail.word}
+                  initialValue={wordExample?.text ?? ""}
+                  resolve={context.resolve}
+                  dismiss={context.dismiss}
               />
             ),
           })
@@ -218,7 +252,7 @@ export function WordExplorer() {
       return
     }
 
-    if (focusTarget === "tags") {
+    if (focusTarget === "tags" && isSidebarVisible) {
       if (key.name === "up") {
         setTagSelectedIndex((currentIndex) => getNextIndex(currentIndex, -1, tags.length))
         return
@@ -248,7 +282,7 @@ export function WordExplorer() {
       return
     }
 
-    if (focusTarget === "words") {
+    if (focusTarget === "words" && isSidebarVisible) {
       if (key.name === "up") {
         setWordSelectedIndex((currentIndex) => getNextIndex(currentIndex, -1, words.length))
         return
@@ -286,95 +320,88 @@ export function WordExplorer() {
 
   return (
     <box width="100%" height="100%" flexDirection={isSidebarVisible ? "row" : "column"} gap={2}>
-      <box width={isSidebarVisible ? SIDEBAR_WIDTH : "100%"} flexDirection="column" gap={1} minHeight={0}>
-        <box
-          flexGrow={1}
-          minHeight={0}
-          backgroundColor={focusTarget === "tags" ? draculaColors.currentLine : draculaColors.background}
-          flexDirection="column"
-        >
-          <text marginX={2} marginY={1}>
-            <strong>Tags</strong>
-            <span fg={homeScreenTheme.mutedText}>  [Space] Toggle</span>
-          </text>
-          <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focusTarget === "tags"}>
-            <box width="100%" flexDirection="column">
-              {tags.map((tag, index) => {
-                const isSelected = index === tagSelectedIndex
-                const isActive = selectedTagIds.includes(tag.id)
+      {isSidebarVisible ? (
+        <box width={SIDEBAR_WIDTH} flexDirection="column" gap={1} minHeight={0}>
+          <box
+            flexGrow={1}
+            minHeight={0}
+            backgroundColor={focusTarget === "tags" ? draculaColors.currentLine : draculaColors.background}
+            flexDirection="column"
+          >
+            <text marginX={2} marginY={1}>
+              <strong>Tags</strong>
+              <span fg={homeScreenTheme.mutedText}>  [Space] Toggle</span>
+            </text>
+            <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focusTarget === "tags"}>
+              <box width="100%" flexDirection="column">
+                {tags.map((tag, index) => {
+                  const isSelected = index === tagSelectedIndex
+                  const isActive = selectedTagIds.includes(tag.id)
 
-                return (
-                  <box
-                    key={tag.id}
-                    width="100%"
-                    paddingX={2}
-                    backgroundColor={isSelected ? draculaColors.purple : undefined}
-                  >
-                    <text>
-                      <strong>{isActive ? "[✔︎]" : "[ ]"}</strong> {tag.name}
-                    </text>
-                  </box>
-                )
-              })}
-            </box>
-          </scrollbox>
+                  return (
+                    <box
+                      key={tag.id}
+                      width="100%"
+                      paddingX={2}
+                      backgroundColor={isSelected ? draculaColors.purple : undefined}
+                    >
+                      <text>
+                        <strong>{isActive ? "[✔︎]" : "[ ]"}</strong> {tag.name}
+                      </text>
+                    </box>
+                  )
+                })}
+              </box>
+            </scrollbox>
+          </box>
+
+          <box
+            flexGrow={1}
+            minHeight={0}
+            backgroundColor={focusTarget === "words" ? draculaColors.currentLine : draculaColors.background}
+            flexDirection="column"
+          >
+            <text marginX={2} marginY={1}>
+              <strong>Words</strong>
+              <span fg={homeScreenTheme.mutedText}>
+                {`  [Ctrl+S] Sort: ${sortMode === "alphabetical" ? "A-Z" : "Added"}`}
+              </span>
+            </text>
+            <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focusTarget === "words"}>
+              <box width="100%" flexDirection="column">
+                {words.map((item, index) => {
+                  const isSelected = index === wordSelectedIndex
+
+                  return (
+                    <box
+                      key={item.wordId}
+                      width="100%"
+                      paddingX={2}
+                      backgroundColor={isSelected ? draculaColors.purple : undefined}
+                    >
+                      <text>{getWordFromWordId(item.wordId)}</text>
+                    </box>
+                  )
+                })}
+              </box>
+            </scrollbox>
+          </box>
         </box>
-
-        <box
-          flexGrow={1}
-          minHeight={0}
-          backgroundColor={focusTarget === "words" ? draculaColors.currentLine : draculaColors.background}
-          flexDirection="column"
-        >
-          <text marginX={2} marginY={1}>
-            <strong>Words</strong>
-            <span fg={homeScreenTheme.mutedText}>
-              {`  [Ctrl+S] Sort: ${sortMode === "alphabetical" ? "A-Z" : "Added"}`}
-            </span>
-          </text>
-          <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focusTarget === "words"}>
-            <box width="100%" flexDirection="column">
-              {words.map((item, index) => {
-                const isSelected = index === wordSelectedIndex
-
-                return (
-                  <box
-                    key={item.wordId}
-                    width="100%"
-                    paddingX={2}
-                    backgroundColor={isSelected ? draculaColors.purple : undefined}
-                  >
-                    <text>{getWordFromWordId(item.wordId)}</text>
-                  </box>
-                )
-              })}
-            </box>
-          </scrollbox>
-        </box>
-      </box>
+      ) : null}
 
       <box
         flexGrow={1}
         minHeight={0}
-        paddingY={1}
+        padding={1}
         backgroundColor={focusTarget === "details" ? draculaColors.currentLine : draculaColors.background}
       >
-        <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focusTarget === "details"}>
-          <box width="100%" flexDirection="column" paddingX={2}>
-            {selectedWordId ? (
-              <WordDetailView
-                detail={detail}
-                focused={focusTarget === "details"}
-                showTagManagementHint={false}
-              />
-            ) : null}
-            {!selectedWordId ? (
-              <text>
-                <span fg={homeScreenTheme.mutedText}>Select one or more tags to list words.</span>
-              </text>
-            ) : null}
-          </box>
-        </scrollbox>
+        <DetailsView
+          selection={detailSelection}
+          focused={focusTarget === "details"}
+          showTagManagementHint={false}
+          emptyStateMessage="Select one or more tags to list words."
+          onSelectionStateChange={handleSelectionStateChange}
+        />
       </box>
 
       {errorMessage ? (

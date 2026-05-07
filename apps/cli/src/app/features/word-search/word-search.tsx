@@ -101,6 +101,12 @@ export function WordSearch() {
     !isDialogOpen && isSidebarVisible && state.focusTarget === "autocomplete"
   const recentFocused = !isDialogOpen && isSidebarVisible && state.focusTarget === "recent"
   const detailsFocused = !isDialogOpen && (!isSidebarVisible || state.focusTarget === "details")
+  const detailSelection = selectedItem
+    ? {
+        query: selectedItem.value,
+        label: selectedItem.label,
+      }
+    : null
 
   const handleAutocompleteActiveChange = React.useCallback(
     (active: boolean) => {
@@ -307,7 +313,7 @@ export function WordSearch() {
         backgroundColor={detailsFocused ? draculaColors.currentLine : draculaColors.background}
       >
         <DetailsView
-          item={selectedItem}
+          selection={detailSelection}
           focused={detailsFocused}
           onTagSelect={handleTagSelect}
           onSelectionStateChange={handleSelectionStateChange}

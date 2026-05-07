@@ -2,16 +2,23 @@ import React from "react"
 import "opentui-spinner/react"
 
 import { useQuery } from "@tanstack/react-query"
-import type { WiktionarySearchItem, WordDetail } from "@puhutko/shared"
+import type { WordDetail } from "@puhutko/shared"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
 import { wordDetailQueryOptions } from "./details-view.queries"
 import { WordDetailView } from "./word-detail/word-detail"
 
 type TagsManagerDialogWord = Pick<WordDetail, "id" | "word">
 
+export type DetailSelection = {
+  query: string
+  label: string
+}
+
 type DetailsViewProps = {
-  item: WiktionarySearchItem | null
+  selection: DetailSelection | null
   focused?: boolean
+  showTagManagementHint?: boolean
+  emptyStateMessage?: string
   onTagSelect?: (tagId: string) => void
   onSelectionStateChange?: (value: {
     detail: TagsManagerDialogWord | null
@@ -20,21 +27,23 @@ type DetailsViewProps = {
 }
 
 export function DetailsView({
-  item,
+  selection,
   focused = false,
+  showTagManagementHint = true,
+  emptyStateMessage,
   onTagSelect,
   onSelectionStateChange,
 }: DetailsViewProps) {
   const detailQuery = useQuery({
-    ...wordDetailQueryOptions(item?.value ?? ""),
-    enabled: Boolean(item),
+    ...wordDetailQueryOptions(selection?.query ?? ""),
+    enabled: Boolean(selection),
     placeholderData: (previousData) => previousData,
   })
 
   const detail: WordDetail | null = detailQuery.data ?? null
   const isFetchingDifferentSelection = detailQuery.isFetching && detailQuery.isPlaceholderData
   const showPendingSpinner = detailQuery.isPending || isFetchingDifferentSelection
-  const activeDetail = item && !detailQuery.isPlaceholderData && detail ? detail : null
+  const activeDetail = selection && !detailQuery.isPlaceholderData && detail ? detail : null
 
   React.useEffect(() => {
     onSelectionStateChange?.({
@@ -55,21 +64,26 @@ export function DetailsView({
     >
       <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focused}>
         <box width="100%" flexDirection="column" gap={0} padding={0}>
-          {item ? (
+          {selection ? (
             detail ? (
               <>
-                <WordDetailView detail={detail} focused={focused} onTagSelect={onTagSelect} />
+                <WordDetailView
+                  detail={detail}
+                  focused={focused}
+                  showTagManagementHint={showTagManagementHint}
+                  onTagSelect={onTagSelect}
+                />
               </>
             ) : detailQuery.isPending ? (
               <>
                 <text>
-                  <strong>{item.label}</strong>
+                  <strong>{selection.label}</strong>
                 </text>
               </>
             ) : detailQuery.isError ? (
               <>
                 <text>
-                  <strong>{item.label}</strong>
+                  <strong>{selection.label}</strong>
                 </text>
                 <text>
                   <span fg={homeScreenTheme.errorText}>Failed to load Kaikki details.</span>
@@ -78,17 +92,21 @@ export function DetailsView({
             ) : (
               <>
                 <text>
-                  <strong>{item.label}</strong>
+                  <strong>{selection.label}</strong>
                 </text>
                 <text>
                   <span fg={homeScreenTheme.mutedText}>No Kaikki detail found for this word.</span>
                 </text>
               </>
             )
+          ) : emptyStateMessage ? (
+            <text>
+              <span fg={homeScreenTheme.mutedText}>{emptyStateMessage}</span>
+            </text>
           ) : null}
         </box>
       </scrollbox>
-      {item && showPendingSpinner ? (
+      {selection && showPendingSpinner ? (
         <box position="absolute" bottom={0} right={1}>
           <spinner name="aesthetic" color={draculaColors.pink} />
         </box>
