@@ -11,7 +11,7 @@ import { wordTagsQueryOptions } from "../word-detail/word-detail.queries"
 import { DeleteTagDialog } from "./delete-tag-dialog"
 import { TagNameDialog } from "./tag-name-dialog"
 
-const VISIBLE_ROW_COUNT = 8
+const VISIBLE_ROW_COUNT = 30
 
 type TagsManagerDialogWord = Pick<WordDetail, "id" | "word">
 
