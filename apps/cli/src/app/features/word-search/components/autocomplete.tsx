@@ -343,7 +343,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
 
             return (
               <box
-                key={index}
+                key={`${item.value}:${item.label}`}
                 paddingX={2}
                 paddingY={0}
                 flexDirection="column"

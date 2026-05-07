@@ -9,7 +9,6 @@ import type { RecentSearch } from "@puhutko/recent-searches"
 import type { WiktionarySearchItem } from "@puhutko/shared"
 import { searchFinnishWiktionaryEntries } from "@puhutko/wiktionary"
 import { recentSearchesService } from "../../persistence"
-import { queryKeys } from "../../query/query-keys"
 import type { RootLayoutOutletContext } from "../../root-layout.types"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
 import { DetailsView } from "../common/details-view"
@@ -23,15 +22,6 @@ import { recentSearchesQueryOptions } from "./word-search.queries"
 import { initialWordSearchState, wordSearchReducer } from "./word-search.reducer"
 import type { TagsManagerDialogWord } from "./word-search.types"
 
-function toSearchItem(item: RecentSearch): WiktionarySearchItem {
-  return {
-    value: item.value,
-    label: item.label,
-    description: item.description,
-    url: item.url,
-  }
-}
-
 export function WordSearch() {
   const dialog = useDialog()
   const queryClient = useQueryClient()
@@ -40,46 +30,11 @@ export function WordSearch() {
     useOutletContext<RootLayoutOutletContext>()
   const { width } = useTerminalDimensions()
   const isDialogOpen = useDialogState((state) => state.isOpen)
-  const recentSearchesQueryKey = queryKeys.recentSearches(RECENT_SEARCH_LIMIT)
   const recentSearchesQuery = useQuery(recentSearchesQueryOptions(RECENT_SEARCH_LIMIT))
   const saveRecentSearchMutation = useMutation({
     mutationFn: (item: WiktionarySearchItem) => recentSearchesService.saveRecentSearch(item),
-    onMutate: async (item) => {
-      await queryClient.cancelQueries({ queryKey: recentSearchesQueryKey })
-
-      const previousRecentSearches = queryClient.getQueryData<RecentSearch[]>(recentSearchesQueryKey) ?? []
-      const optimisticRecentSearch: RecentSearch = {
-        value: item.value,
-        label: item.label,
-        description: item.description,
-        url: item.url,
-        lastSearchedAt: new Date().toISOString(),
-      }
-
-      queryClient.setQueryData<RecentSearch[]>(
-        recentSearchesQueryKey,
-        [
-          optimisticRecentSearch,
-          ...previousRecentSearches.filter((search) => search.value !== optimisticRecentSearch.value),
-        ].slice(0, RECENT_SEARCH_LIMIT),
-      )
-
-      return { previousRecentSearches }
-    },
-    onError: (_error, _item, context) => {
-      if (!context) {
-        return
-      }
-
-      queryClient.setQueryData(recentSearchesQueryKey, context.previousRecentSearches)
-    },
-    onSuccess: (savedSearch) => {
-      queryClient.setQueryData<RecentSearch[]>(recentSearchesQueryKey, (currentSearches = []) => {
-        return [
-          savedSearch,
-          ...currentSearches.filter((search) => search.value !== savedSearch.value),
-        ].slice(0, RECENT_SEARCH_LIMIT)
-      })
+    onSuccess: async () => {
+      await recentSearchesQuery.refetch()
     },
   })
 
@@ -91,7 +46,7 @@ export function WordSearch() {
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
   const [state, dispatch] = React.useReducer(wordSearchReducer, initialWordSearchState)
   const recentSearches = React.useMemo(
-    () => (recentSearchesQuery.data ?? []).map(toSearchItem),
+    () => recentSearchesQuery.data ?? [],
     [recentSearchesQuery.data],
   )
 

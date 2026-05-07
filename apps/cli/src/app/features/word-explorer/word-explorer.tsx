@@ -20,6 +20,14 @@ import {
 
 type FocusTarget = "tags" | "words" | "details"
 
+function getTagItemId(tagId: string) {
+  return `tag-item-${tagId}`
+}
+
+function getWordItemId(wordId: string) {
+  return `word-item-${wordId}`
+}
+
 function getWordFromWordId(wordId: string): string {
   const segments = wordId.split(":")
 
@@ -186,11 +194,13 @@ export function WordExplorer() {
   }, [tagSelectedIndex, tags.length])
 
   React.useEffect(() => {
-    if (!isSidebarVisible || !tags[tagSelectedIndex]) {
+    const selectedTag = tags[tagSelectedIndex]
+
+    if (!isSidebarVisible || !selectedTag) {
       return
     }
 
-    tagsScrollboxRef.current?.scrollChildIntoView(`tag-item-${tagSelectedIndex}`)
+    tagsScrollboxRef.current?.scrollChildIntoView(getTagItemId(selectedTag.id))
   }, [isSidebarVisible, tagSelectedIndex, tags])
 
   React.useEffect(() => {
@@ -202,11 +212,13 @@ export function WordExplorer() {
   }, [wordSelectedIndex, words.length])
 
   React.useEffect(() => {
-    if (!isSidebarVisible || !words[wordSelectedIndex]) {
+    const selectedWord = words[wordSelectedIndex]
+
+    if (!isSidebarVisible || !selectedWord) {
       return
     }
 
-    wordsScrollboxRef.current?.scrollChildIntoView(`word-item-${wordSelectedIndex}`)
+    wordsScrollboxRef.current?.scrollChildIntoView(getWordItemId(selectedWord.wordId))
   }, [isSidebarVisible, wordSelectedIndex, words])
 
   const toggleSelectedTag = React.useCallback(() => {
@@ -380,7 +392,7 @@ export function WordExplorer() {
                   return (
                     <box
                       key={tag.id}
-                      id={`tag-item-${index}`}
+                      id={getTagItemId(tag.id)}
                       width="100%"
                       paddingX={2}
                       backgroundColor={isSelected ? draculaColors.purple : undefined}
@@ -421,7 +433,7 @@ export function WordExplorer() {
                   return (
                     <box
                       key={item.wordId}
-                      id={`word-item-${index}`}
+                      id={getWordItemId(item.wordId)}
                       width="100%"
                       paddingX={2}
                       backgroundColor={isSelected ? draculaColors.purple : undefined}
