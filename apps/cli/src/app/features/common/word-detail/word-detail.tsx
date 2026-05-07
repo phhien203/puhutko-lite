@@ -88,17 +88,19 @@ export function WordDetailView({
         </text>
         {assignedTags.length > 0 ? (
           onTagSelect ? (
-            <box width="100%" flexDirection="column">
-              {assignedTags.map((tag) => (
-                <text
-                  key={`${detail.id}:tag:${tag.id}`}
-                  fg={homeScreenTheme.linkText}
-                  onMouseUp={() => {
-                    onTagSelect(tag.id)
-                  }}
-                >
-                  {tag.name}
-                </text>
+            <box width="100%" flexDirection="row">
+              {assignedTags.map((tag, index) => (
+                <React.Fragment key={`${detail.id}:tag:${tag.id}`}>
+                  <text
+                    fg={homeScreenTheme.linkText}
+                    onMouseUp={() => {
+                      onTagSelect(tag.id)
+                    }}
+                  >
+                    {tag.name}
+                  </text>
+                  {index < assignedTags.length - 1 ? <text>, </text> : null}
+                </React.Fragment>
               ))}
             </box>
           ) : (

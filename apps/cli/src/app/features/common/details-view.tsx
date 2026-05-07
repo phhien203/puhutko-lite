@@ -1,4 +1,5 @@
 import React from "react"
+import "opentui-spinner/react"
 
 import { useQuery } from "@tanstack/react-query"
 import type { WiktionarySearchItem, WordDetail } from "@puhutko/shared"
@@ -32,6 +33,7 @@ export function DetailsView({
 
   const detail: WordDetail | null = detailQuery.data ?? null
   const isFetchingDifferentSelection = detailQuery.isFetching && detailQuery.isPlaceholderData
+  const showPendingSpinner = detailQuery.isPending || isFetchingDifferentSelection
   const activeDetail = item && !detailQuery.isPlaceholderData && detail ? detail : null
 
   React.useEffect(() => {
@@ -46,6 +48,7 @@ export function DetailsView({
       width="100%"
       height="100%"
       flexDirection="column"
+      position="relative"
       paddingX={2}
       minHeight={0}
       backgroundColor={focused ? draculaColors.currentLine : draculaColors.background}
@@ -55,20 +58,12 @@ export function DetailsView({
           {item ? (
             detail ? (
               <>
-                {isFetchingDifferentSelection ? (
-                  <text>
-                    <span fg={homeScreenTheme.mutedText}>Loading new selection...</span>
-                  </text>
-                ) : null}
                 <WordDetailView detail={detail} focused={focused} onTagSelect={onTagSelect} />
               </>
             ) : detailQuery.isPending ? (
               <>
                 <text>
                   <strong>{item.label}</strong>
-                </text>
-                <text>
-                  <span fg={homeScreenTheme.mutedText}>Loading Kaikki details...</span>
                 </text>
               </>
             ) : detailQuery.isError ? (
@@ -93,6 +88,11 @@ export function DetailsView({
           ) : null}
         </box>
       </scrollbox>
+      {item && showPendingSpinner ? (
+        <box position="absolute" bottom={0} right={1}>
+          <spinner name="aesthetic" color={draculaColors.pink} />
+        </box>
+      ) : null}
     </box>
   )
 }

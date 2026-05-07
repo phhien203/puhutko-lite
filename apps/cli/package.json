@@ -16,17 +16,18 @@
     "build:windows:x64": "bun build --compile --target=bun-windows-x64 --outfile dist/puhutko-lite.exe src/index.tsx"
   },
   "dependencies": {
+    "@opentui-ui/dialog": "0.1.2",
     "@opentui/core": "0.2.2",
     "@opentui/react": "0.2.2",
-    "@opentui-ui/dialog": "0.1.2",
-    "@tanstack/react-query": "^5.90.5",
     "@puhutko/kaikki": "workspace:*",
     "@puhutko/recent-searches": "workspace:*",
     "@puhutko/shared": "workspace:*",
     "@puhutko/sqlite": "workspace:*",
+    "@puhutko/wiktionary": "workspace:*",
     "@puhutko/word-example": "workspace:*",
     "@puhutko/word-tags": "workspace:*",
-    "@puhutko/wiktionary": "workspace:*",
+    "@tanstack/react-query": "^5.90.5",
+    "opentui-spinner": "^0.0.6",
     "react": "19.2.5",
     "react-router": "^7.9.6"
   },
