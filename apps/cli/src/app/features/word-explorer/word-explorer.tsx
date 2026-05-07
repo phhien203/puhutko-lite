@@ -90,7 +90,7 @@ export function WordExplorer() {
   const tagsQuery = useQuery(wordExplorerTagsQueryOptions())
   const initialTagIds = React.useMemo(() => searchParams.getAll("tag"), [])
   const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>(() => Array.from(new Set(initialTagIds)))
-  const [sortMode, setSortMode] = React.useState<WordExplorerSortMode>("alphabetical")
+  const [sortMode, setSortMode] = React.useState<WordExplorerSortMode>("added")
   const [tagSelectedIndex, setTagSelectedIndex] = React.useState(0)
   const [wordSelectedIndex, setWordSelectedIndex] = React.useState(0)
   const [focusTarget, setFocusTarget] = React.useState<FocusTarget>("tags")
