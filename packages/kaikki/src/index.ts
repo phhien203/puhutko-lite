@@ -300,7 +300,7 @@ function inferStrongGradeStart(word: string, gradation: ConsonantGradation, form
     }
   }
 
-  return starts.length === 1 ? starts[0] : undefined
+  return undefined
 }
 
 function inferWeakGradeStart(word: string, gradation: ConsonantGradation, forms: KaikkiEntry["forms"]): number | undefined {
@@ -322,7 +322,7 @@ function inferWeakGradeStart(word: string, gradation: ConsonantGradation, forms:
     }
   }
 
-  return starts[starts.length - 1]
+  return undefined
 }
 
 function getOccurrenceStarts(value: string, search: string) {

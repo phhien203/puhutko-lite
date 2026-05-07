@@ -109,14 +109,6 @@ export function splitStrongGrade(word: string, gradation?: ConsonantGradation): 
     return splitGradeByPosition(word, gradation, "weak")
   }
 
-  if (gradation.strong && word.includes(gradation.strong) && !hasWeakOnlyMarker(word, gradation)) {
-    return splitGradeBySearch(word, gradation, "strong")
-  }
-
-  if (gradation.weak && word.includes(gradation.weak)) {
-    return splitGradeBySearch(word, gradation, "weak")
-  }
-
   return [{ value: word, highlight: false }]
 }
 
@@ -215,14 +207,6 @@ function splitGradeBySearch(
   }
 
   return parts
-}
-
-function hasWeakOnlyMarker(value: string, gradation: ConsonantGradation) {
-  return (
-    gradation.weak !== "ø" &&
-    !gradation.strong.includes(gradation.weak) &&
-    value.includes(gradation.weak)
-  )
 }
 
 function getHighlightColor(type?: "forward" | "reverse") {
