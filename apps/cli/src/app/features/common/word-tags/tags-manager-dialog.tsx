@@ -142,15 +142,23 @@ export function TagsManagerDialog({ detail, dialogId, dismiss }: TagsManagerDial
 
     setErrorMessage(null)
 
+    const invalidateAssignmentQueries = async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.wordTags(detail.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.wordExplorerTags() }),
+        queryClient.invalidateQueries({ queryKey: ["word-explorer", "words"] }),
+      ])
+    }
+
     try {
       await toggleTagAssignmentMutation.mutateAsync({
         wordId: detail.id,
         tagId: selectedTag.tag.id,
       })
-      await queryClient.invalidateQueries({ queryKey: queryKeys.wordTags(detail.id) })
+      await invalidateAssignmentQueries()
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to update tag assignment.")
-      await queryClient.invalidateQueries({ queryKey: queryKeys.wordTags(detail.id) })
+      await invalidateAssignmentQueries()
     }
   }, [detail.id, queryClient, selectedTag, toggleTagAssignmentMutation])
 

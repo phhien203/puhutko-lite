@@ -29,6 +29,7 @@
 - In OpenTUI, raising `zIndex` on an absolutely positioned child may not be enough to overlay later sibling content. If a popup still renders under surrounding UI, raise the `zIndex` on the popup's outer wrapper too so the whole component stacks above sibling layout items.
 - In OpenTUI lists, do not identify rendered items by array index when items can be inserted, removed, or reordered. Use a stable item identity for `key`, element `id`, and scroll targets, or the UI can show stale rows even when navigation state and data are correct.
 - In `bun:sqlite`, SQL placeholders may use names like `$wordValue`, but object bindings passed to `.get()`, `.all()`, or `.run()` should use keys without the prefix, like `{ wordValue: value }` rather than `{ $wordValue: value }`.
+- In React Query, queries here often use `staleTime: Infinity`. After mutations that affect derived lists or counters in other screens, invalidate every impacted query family explicitly, not just the currently visible detail query, or navigation can reuse stale cached data.
 
 ## Verification
 
