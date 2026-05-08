@@ -29,11 +29,19 @@ export function RootLayout({ routes }: RootLayoutProps) {
   }, [])
 
   useKeyboard((key) => {
+    const isCtrlShortcut = key.ctrl && !key.meta && !key.option
+
+    if (isCtrlShortcut && key.name === "l") {
+      renderer.console.toggle()
+      key.preventDefault()
+      key.stopPropagation()
+      return
+    }
+
     if (isDialogOpen) {
       return
     }
 
-    const isCtrlShortcut = key.ctrl && !key.meta && !key.option
     const isRouteShortcut = routes.some((route) => route.shortcut === key.name)
 
     if (!isCtrlShortcut || (isAutocompleteActive && key.name !== "c" && key.name !== "b" && !isRouteShortcut)) {

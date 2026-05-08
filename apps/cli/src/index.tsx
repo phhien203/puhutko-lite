@@ -1,4 +1,4 @@
-import { createCliRenderer } from "@opentui/core"
+import { ConsolePosition, createCliRenderer } from "@opentui/core"
 import { createRoot } from "@opentui/react"
 import { App } from "./app/app"
 import { APP_NAME, APP_VERSION } from "./app/version"
@@ -16,7 +16,11 @@ if (args.includes("--help") || args.includes("-h")) {
 }
 
 const renderer = await createCliRenderer({
-  exitOnCtrlC: true
+  exitOnCtrlC: true,
+  consoleOptions: {
+    position: ConsolePosition.BOTTOM,
+    sizePercent: 40,
+  },
 })
 
 createRoot(renderer).render(<App />)
