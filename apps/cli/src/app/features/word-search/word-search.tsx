@@ -326,7 +326,8 @@ export function WordSearch() {
       <box
         flexGrow={1}
         minHeight={0}
-        padding={1}
+        paddingY={1}
+        paddingX={2}
         backgroundColor={detailsFocused ? draculaColors.currentLine : draculaColors.background}
       >
         <DetailsView

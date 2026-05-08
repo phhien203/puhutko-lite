@@ -3,7 +3,12 @@ import type { ScrollBoxRenderable } from "@opentui/core"
 import { useKeyboard, useTerminalDimensions } from "@opentui/react"
 import { useQuery } from "@tanstack/react-query"
 import { useQueryClient } from "@tanstack/react-query"
-import { findNextJumpMatch, type WordExplorerSortMode } from "@puhutko/word-tags"
+import {
+  findNextJumpMatch,
+  type TagWithWordCount,
+  type WordExplorerSortMode,
+  type WordExplorerWord,
+} from "@puhutko/word-tags"
 import React from "react"
 import { useNavigate, useOutletContext, useSearchParams } from "react-router"
 
@@ -12,13 +17,29 @@ import { draculaColors, homeScreenTheme } from "../../theme/colors"
 import { DetailsView } from "../common/details-view"
 import { WordExampleDialog } from "../common/word-example/word-example-dialog"
 import { wordExampleQueryOptions } from "../common/word-detail/word-detail.queries"
-import { NARROW_TERMINAL_WIDTH, SIDEBAR_WIDTH } from "../word-search/word-search.constants"
+import {
+  FULLSCREEN_OVERLAY_WIDTH,
+  NARROW_TERMINAL_WIDTH,
+  SIDEBAR_WIDTH,
+} from "../word-search/word-search.constants"
 import {
   wordExplorerTagsQueryOptions,
   wordExplorerWordsQueryOptions,
 } from "./word-explorer.queries"
 
 type FocusTarget = "tags" | "words" | "details"
+
+type SidebarContentProps = {
+  focusTarget: FocusTarget
+  selectedTagIds: string[]
+  sortMode: WordExplorerSortMode
+  tagSelectedIndex: number
+  tags: TagWithWordCount[]
+  tagsScrollboxRef: React.RefObject<ScrollBoxRenderable | null>
+  wordSelectedIndex: number
+  words: WordExplorerWord[]
+  wordsScrollboxRef: React.RefObject<ScrollBoxRenderable | null>
+}
 
 function getTagItemId(tagId: string) {
   return `tag-item-${tagId}`
@@ -78,6 +99,109 @@ function findNextWordJumpMatch(words: string[], currentIndex: number, typedChar:
   return currentIndex
 }
 
+function SidebarContent({
+  focusTarget,
+  selectedTagIds,
+  sortMode,
+  tagSelectedIndex,
+  tags,
+  tagsScrollboxRef,
+  wordSelectedIndex,
+  words,
+  wordsScrollboxRef,
+}: SidebarContentProps) {
+  return (
+    <>
+      <box
+        flexGrow={1}
+        minHeight={0}
+        backgroundColor={
+          focusTarget === "tags" ? draculaColors.currentLine : draculaColors.background
+        }
+        flexDirection="column"
+      >
+        <text marginX={2} marginY={1}>
+          <strong>Tags</strong>
+          <span fg={homeScreenTheme.mutedText}> [Space] Toggle</span>
+        </text>
+        <scrollbox
+          ref={tagsScrollboxRef}
+          width="100%"
+          flexGrow={1}
+          minHeight={0}
+          focused={focusTarget === "tags"}
+        >
+          <box width="100%" flexDirection="column">
+            {tags.map((tag, index) => {
+              const isSelected = index === tagSelectedIndex
+              const isActive = selectedTagIds.includes(tag.id)
+
+              return (
+                <box
+                  key={tag.id}
+                  id={getTagItemId(tag.id)}
+                  width="100%"
+                  paddingX={2}
+                  backgroundColor={isSelected ? draculaColors.purple : undefined}
+                >
+                  <text fg={isActive ? draculaColors.yellow : undefined}>
+                    {isActive ? (
+                      <strong>{`[*] ${tag.name} (${tag.wordCount})`}</strong>
+                    ) : (
+                      `[ ] ${tag.name} (${tag.wordCount})`
+                    )}
+                  </text>
+                </box>
+              )
+            })}
+          </box>
+        </scrollbox>
+      </box>
+
+      <box
+        flexGrow={1}
+        minHeight={0}
+        backgroundColor={
+          focusTarget === "words" ? draculaColors.currentLine : draculaColors.background
+        }
+        flexDirection="column"
+      >
+        <text marginX={2} marginY={1}>
+          <strong>Words</strong>
+          <span fg={homeScreenTheme.mutedText}>
+            {`  [Ctrl+S] Sorting by ${sortMode === "alphabetical" ? "A-Z" : "Added"}`}
+          </span>
+        </text>
+        <scrollbox
+          ref={wordsScrollboxRef}
+          width="100%"
+          flexGrow={1}
+          minHeight={0}
+          focused={focusTarget === "words"}
+        >
+          <box width="100%" flexDirection="column">
+            {words.map((item, index) => {
+              const isSelected = index === wordSelectedIndex
+
+              return (
+                <box
+                  key={item.wordId}
+                  id={getWordItemId(item.wordId)}
+                  width="100%"
+                  paddingX={2}
+                  backgroundColor={isSelected ? draculaColors.purple : undefined}
+                >
+                  <text>{getWordFromWordId(item.wordId)}</text>
+                </box>
+              )
+            })}
+          </box>
+        </scrollbox>
+      </box>
+    </>
+  )
+}
+
 export function WordExplorer() {
   const dialog = useDialog()
   const isDialogOpen = useDialogState((state) => state.isOpen)
@@ -95,6 +219,7 @@ export function WordExplorer() {
   const [wordSelectedIndex, setWordSelectedIndex] = React.useState(0)
   const [focusTarget, setFocusTarget] = React.useState<FocusTarget>("tags")
   const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(true)
+  const [isSidebarOverlayOpen, setIsSidebarOverlayOpen] = React.useState(false)
   const [selectedDetail, setSelectedDetail] = React.useState<{ id: string; word: string } | null>(null)
   const [isFetchingDifferentSelection, setIsFetchingDifferentSelection] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
@@ -116,7 +241,12 @@ export function WordExplorer() {
       }
     : null
   const isNarrowTerminal = width < NARROW_TERMINAL_WIDTH
-  const isSidebarVisible = !isNarrowTerminal && isSidebarExpanded
+  const isFullScreenOverlay = width < FULLSCREEN_OVERLAY_WIDTH
+  const isSplitSidebarVisible = !isNarrowTerminal && isSidebarExpanded
+  const isOverlayVisible = isNarrowTerminal && isSidebarOverlayOpen
+  const isSidebarVisible = isSplitSidebarVisible || isOverlayVisible
+  const detailsFocused =
+    !isDialogOpen && !isOverlayVisible && (!isSplitSidebarVisible || focusTarget === "details")
 
   React.useEffect(() => {
     setAutocompleteActive(false)
@@ -125,10 +255,23 @@ export function WordExplorer() {
   React.useEffect(() => {
     setToggleSidebarShortcutHandler(() => {
       if (isNarrowTerminal) {
+        setIsSidebarOverlayOpen((currentValue) => {
+          const nextValue = !currentValue
+
+          setFocusTarget(nextValue ? "tags" : "details")
+
+          return nextValue
+        })
         return
       }
 
-      setIsSidebarExpanded((currentValue) => !currentValue)
+      setIsSidebarExpanded((currentValue) => {
+        const nextValue = !currentValue
+
+        setFocusTarget(nextValue ? "tags" : "details")
+
+        return nextValue
+      })
     })
 
     return () => {
@@ -137,12 +280,24 @@ export function WordExplorer() {
   }, [isNarrowTerminal, setToggleSidebarShortcutHandler])
 
   React.useEffect(() => {
+    if (isNarrowTerminal) {
+      if (!isSidebarOverlayOpen) {
+        setFocusTarget("details")
+      }
+
+      return
+    }
+
+    if (isSidebarOverlayOpen) {
+      setIsSidebarOverlayOpen(false)
+    }
+
     if (isSidebarVisible) {
       return
     }
 
     setFocusTarget("details")
-  }, [isSidebarVisible])
+  }, [isNarrowTerminal, isSidebarOverlayOpen, isSidebarVisible])
 
   React.useEffect(() => {
     if (!tagsQuery.error && !wordsQuery.error) {
@@ -243,9 +398,13 @@ export function WordExplorer() {
 
     if (key.name === "tab") {
       setFocusTarget((currentTarget) => {
-        const order: FocusTarget[] = isSidebarVisible
-          ? ["tags", "words", "details"]
-          : ["details"]
+        const order: FocusTarget[] = isNarrowTerminal
+          ? isOverlayVisible
+            ? ["tags", "words"]
+            : ["details"]
+          : isSidebarVisible
+            ? ["tags", "words", "details"]
+            : ["details"]
         const currentIndex = order.indexOf(currentTarget)
         const delta = key.shift ? -1 : 1
         const nextIndex = (currentIndex + delta + order.length) % order.length
@@ -364,104 +523,77 @@ export function WordExplorer() {
   })
 
   return (
-    <box width="100%" height="100%" flexDirection={isSidebarVisible ? "row" : "column"} gap={2}>
-      {isSidebarVisible ? (
+    <box
+      width="100%"
+      height="100%"
+      flexDirection={isSplitSidebarVisible ? "row" : "column"}
+      gap={2}
+    >
+      {isSplitSidebarVisible ? (
         <box width={SIDEBAR_WIDTH} flexDirection="column" gap={1} minHeight={0}>
-          <box
-            flexGrow={1}
-            minHeight={0}
-            backgroundColor={focusTarget === "tags" ? draculaColors.currentLine : draculaColors.background}
-            flexDirection="column"
-          >
-            <text marginX={2} marginY={1}>
-              <strong>Tags</strong>
-              <span fg={homeScreenTheme.mutedText}>  [Space] Toggle</span>
-            </text>
-            <scrollbox
-              ref={tagsScrollboxRef}
-              width="100%"
-              flexGrow={1}
-              minHeight={0}
-              focused={focusTarget === "tags"}
-            >
-              <box width="100%" flexDirection="column">
-                {tags.map((tag, index) => {
-                  const isSelected = index === tagSelectedIndex
-                  const isActive = selectedTagIds.includes(tag.id)
-
-                  return (
-                    <box
-                      key={tag.id}
-                      id={getTagItemId(tag.id)}
-                      width="100%"
-                      paddingX={2}
-                      backgroundColor={isSelected ? draculaColors.purple : undefined}
-                    >
-                      <text fg={isActive ? draculaColors.yellow : undefined}>
-                        {isActive ? <strong>{`[*] ${tag.name} (${tag.wordCount})`}</strong> : `[ ] ${tag.name} (${tag.wordCount})`}
-                      </text>
-                    </box>
-                  )
-                })}
-              </box>
-            </scrollbox>
-          </box>
-
-          <box
-            flexGrow={1}
-            minHeight={0}
-            backgroundColor={focusTarget === "words" ? draculaColors.currentLine : draculaColors.background}
-            flexDirection="column"
-          >
-            <text marginX={2} marginY={1}>
-              <strong>Words</strong>
-              <span fg={homeScreenTheme.mutedText}>
-                {`  [Ctrl+S] Sorting by ${sortMode === "alphabetical" ? "A-Z" : "Added"}`}
-              </span>
-            </text>
-            <scrollbox
-              ref={wordsScrollboxRef}
-              width="100%"
-              flexGrow={1}
-              minHeight={0}
-              focused={focusTarget === "words"}
-            >
-              <box width="100%" flexDirection="column">
-                {words.map((item, index) => {
-                  const isSelected = index === wordSelectedIndex
-
-                  return (
-                    <box
-                      key={item.wordId}
-                      id={getWordItemId(item.wordId)}
-                      width="100%"
-                      paddingX={2}
-                      backgroundColor={isSelected ? draculaColors.purple : undefined}
-                    >
-                      <text>{getWordFromWordId(item.wordId)}</text>
-                    </box>
-                  )
-                })}
-              </box>
-            </scrollbox>
-          </box>
+          <SidebarContent
+            focusTarget={focusTarget}
+            selectedTagIds={selectedTagIds}
+            sortMode={sortMode}
+            tagSelectedIndex={tagSelectedIndex}
+            tags={tags}
+            tagsScrollboxRef={tagsScrollboxRef}
+            wordSelectedIndex={wordSelectedIndex}
+            words={words}
+            wordsScrollboxRef={wordsScrollboxRef}
+          />
         </box>
       ) : null}
 
       <box
         flexGrow={1}
         minHeight={0}
-        padding={1}
-        backgroundColor={focusTarget === "details" ? draculaColors.currentLine : draculaColors.background}
+        paddingX={2}
+        paddingY={1}
+        backgroundColor={detailsFocused ? draculaColors.currentLine : draculaColors.background}
       >
         <DetailsView
           selection={detailSelection}
-          focused={focusTarget === "details"}
+          focused={detailsFocused}
           showTagManagementHint={false}
           emptyStateMessage="Select one or more tags to list words."
           onSelectionStateChange={handleSelectionStateChange}
         />
       </box>
+
+      {isOverlayVisible ? (
+        <box
+          position="absolute"
+          left={0}
+          top={0}
+          bottom={0}
+          right={isFullScreenOverlay ? 0 : undefined}
+          width={isFullScreenOverlay ? undefined : SIDEBAR_WIDTH}
+          zIndex={200}
+        >
+          <box
+            width="100%"
+            height="100%"
+            flexDirection="column"
+            gap={1}
+            minHeight={0}
+            backgroundColor={draculaColors.background}
+            zIndex={200}
+          >
+            <SidebarContent
+              focusTarget={focusTarget}
+              selectedTagIds={selectedTagIds}
+              sortMode={sortMode}
+              tagSelectedIndex={tagSelectedIndex}
+              tags={tags}
+              tagsScrollboxRef={tagsScrollboxRef}
+              wordSelectedIndex={wordSelectedIndex}
+              words={words}
+              wordsScrollboxRef={wordsScrollboxRef}
+            />
+          </box>
+        </box>
+      ) : null}
 
       {errorMessage ? (
         <box position="absolute" bottom={0} right={0} border borderStyle="rounded" paddingX={1}>

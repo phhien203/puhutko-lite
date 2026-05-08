@@ -58,9 +58,10 @@ export function DetailsView({
       height="100%"
       flexDirection="column"
       position="relative"
+      paddingY={1}
       paddingX={2}
       minHeight={0}
-      backgroundColor={focused ? draculaColors.currentLine : draculaColors.background}
+      backgroundColor={draculaColors.background}
     >
       <scrollbox width="100%" flexGrow={1} minHeight={0} focused={focused}>
         <box width="100%" flexDirection="column" gap={0} padding={0}>

@@ -26,20 +26,22 @@ export function wordSearchReducer(
       return {
         ...state,
         focusTarget: "details",
+        isAutocompleteActive: false,
         isSidebarOverlayOpen: false,
       }
     case "sidebar/toggle":
-      if (state.focusTarget === "autocomplete" || state.isAutocompleteActive) {
-        return state
-      }
-
       if (action.isNarrowTerminal) {
         if (state.isSidebarOverlayOpen) {
           return {
             ...state,
             focusTarget: "details",
+            isAutocompleteActive: false,
             isSidebarOverlayOpen: false,
           }
+        }
+
+        if (state.focusTarget === "autocomplete" || state.isAutocompleteActive) {
+          return state
         }
 
         return {
@@ -49,10 +51,23 @@ export function wordSearchReducer(
         }
       }
 
+      if (state.isSidebarExpanded) {
+        return {
+          ...state,
+          focusTarget: "details",
+          isAutocompleteActive: false,
+          isSidebarExpanded: false,
+        }
+      }
+
+      if (state.focusTarget === "autocomplete" || state.isAutocompleteActive) {
+        return state
+      }
+
       return {
         ...state,
-        focusTarget: state.isSidebarExpanded ? "details" : state.focusTarget,
-        isSidebarExpanded: !state.isSidebarExpanded,
+        focusTarget: "autocomplete",
+        isSidebarExpanded: true,
       }
     case "focus/next":
       if (action.isNarrowTerminal) {

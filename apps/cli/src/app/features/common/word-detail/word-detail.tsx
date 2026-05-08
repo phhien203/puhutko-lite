@@ -43,12 +43,7 @@ export function WordDetailView({
   const exampleLines = wordExampleText ? wordExampleText.split("\n") : []
 
   return (
-    <box
-      width="100%"
-      flexDirection="column"
-      gap={1}
-      backgroundColor={focused ? homeScreenTheme.panelFocusedBackground : undefined}
-    >
+    <box width="100%" flexDirection="column" gap={1}>
       <GradationHeader word={detail.word} gradation={detail.gradation} />
 
       <box width="100%" flexDirection="column" gap={0}>

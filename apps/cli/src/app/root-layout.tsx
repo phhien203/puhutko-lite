@@ -1,7 +1,8 @@
 import { useDialogState } from "@opentui-ui/dialog/react"
-import { useKeyboard, useRenderer } from "@opentui/react"
+import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/react"
 import React from "react"
 import { Outlet, useLocation, useNavigate } from "react-router"
+import { NARROW_TERMINAL_WIDTH } from "./features/word-search/word-search.constants"
 import { draculaColors } from "./theme/colors"
 import type { RootLayoutOutletContext } from "./root-layout.types"
 import type { AppRouteMeta } from "./router"
@@ -14,16 +15,22 @@ export function RootLayout({ routes }: RootLayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const renderer = useRenderer()
+  const { width } = useTerminalDimensions()
   const isDialogOpen = useDialogState((state) => state.isOpen)
   const [isAutocompleteActive, setIsAutocompleteActive] = React.useState(false)
   const toggleSidebarShortcutHandlerRef = React.useRef<(() => void) | null>(null)
+  const isNarrowTerminal = width < NARROW_TERMINAL_WIDTH
 
   const activeRoute = routes.find((route) => route.path === location.pathname)
   const footerHints =
     activeRoute?.path === "/word-explorer"
-      ? "Ctrl+g/Esc Word Search   Ctrl+b Toggle Sidebar   Ctrl+c Quit"
-      : "Ctrl+x Word Explorer   Ctrl+b Toggle Sidebar   Ctrl+c Quit"
-  const footerCredits = "Made with ♥︎ by Hien Pham"
+      ? isNarrowTerminal
+        ? "Ctrl+g/Esc Word Search   Ctrl+b Toggle Sidebar"
+        : "Ctrl+g/Esc Word Search   Ctrl+b Toggle Sidebar   Ctrl+c Quit"
+      : isNarrowTerminal
+        ? "Ctrl+x Word Explorer   Ctrl+b Toggle Sidebar"
+        : "Ctrl+x Word Explorer   Ctrl+b Toggle Sidebar   Ctrl+c Quit"
+  const footerCredits = isNarrowTerminal ? null : "Made by Hien Pham"
   const setToggleSidebarShortcutHandler = React.useCallback((handler: (() => void) | null) => {
     toggleSidebarShortcutHandlerRef.current = handler
   }, [])
@@ -76,10 +83,12 @@ export function RootLayout({ routes }: RootLayoutProps) {
     >
       <box padding={0} flexGrow={1} minHeight={0}>
         <Outlet
-          context={{
-            setAutocompleteActive: setIsAutocompleteActive,
-            setToggleSidebarShortcutHandler,
-          } satisfies RootLayoutOutletContext}
+          context={
+            {
+              setAutocompleteActive: setIsAutocompleteActive,
+              setToggleSidebarShortcutHandler,
+            } satisfies RootLayoutOutletContext
+          }
         />
       </box>
 
@@ -94,9 +103,11 @@ export function RootLayout({ routes }: RootLayoutProps) {
         <box flexGrow={1} minWidth={0}>
           <text>{footerHints}</text>
         </box>
-        <box flexShrink={0} marginLeft={2}>
-          <text>{footerCredits}</text>
-        </box>
+        {footerCredits ? (
+          <box flexShrink={0} marginLeft={2}>
+            <text>{footerCredits}</text>
+          </box>
+        ) : null}
       </box>
     </box>
   )
