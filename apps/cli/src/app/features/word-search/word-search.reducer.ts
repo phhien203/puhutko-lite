@@ -4,6 +4,7 @@ import { getNextFocusTarget } from "./word-search.utils"
 export const initialWordSearchState: WordSearchState = {
   focusTarget: "autocomplete",
   isSidebarExpanded: true,
+  isSidebarOverlayOpen: false,
   isAutocompleteActive: false,
 }
 
@@ -17,13 +18,35 @@ export function wordSearchReducer(
         ...state,
         isAutocompleteActive: action.active,
       }
-    case "sidebar/toggle":
-      if (
-        action.isNarrowTerminal ||
-        state.focusTarget === "autocomplete" ||
-        state.isAutocompleteActive
-      ) {
+    case "overlay/close":
+      if (!state.isSidebarOverlayOpen && state.focusTarget === "details") {
         return state
+      }
+
+      return {
+        ...state,
+        focusTarget: "details",
+        isSidebarOverlayOpen: false,
+      }
+    case "sidebar/toggle":
+      if (state.focusTarget === "autocomplete" || state.isAutocompleteActive) {
+        return state
+      }
+
+      if (action.isNarrowTerminal) {
+        if (state.isSidebarOverlayOpen) {
+          return {
+            ...state,
+            focusTarget: "details",
+            isSidebarOverlayOpen: false,
+          }
+        }
+
+        return {
+          ...state,
+          focusTarget: "autocomplete",
+          isSidebarOverlayOpen: true,
+        }
       }
 
       return {
@@ -32,7 +55,25 @@ export function wordSearchReducer(
         isSidebarExpanded: !state.isSidebarExpanded,
       }
     case "focus/next":
-      if (action.isNarrowTerminal || !state.isSidebarExpanded) {
+      if (action.isNarrowTerminal) {
+        if (!state.isSidebarOverlayOpen) {
+          if (state.focusTarget === "details") {
+            return state
+          }
+
+          return {
+            ...state,
+            focusTarget: "details",
+          }
+        }
+
+        return {
+          ...state,
+          focusTarget: state.focusTarget === "recent" ? "autocomplete" : "recent",
+        }
+      }
+
+      if (!state.isSidebarExpanded) {
         if (state.focusTarget === "details") {
           return state
         }
@@ -48,7 +89,33 @@ export function wordSearchReducer(
         focusTarget: getNextFocusTarget(state.focusTarget, action.backwards),
       }
     case "layout/sync":
-      if (!action.isSidebarVisible || action.isNarrowTerminal) {
+      if (action.isNarrowTerminal) {
+        if (!state.isSidebarOverlayOpen) {
+          if (state.focusTarget === "details") {
+            return state
+          }
+
+          return {
+            ...state,
+            focusTarget: "details",
+          }
+        }
+
+        return state
+      }
+
+      if (state.isSidebarOverlayOpen) {
+        return {
+          ...state,
+          focusTarget:
+            !action.isSidebarVisible && state.focusTarget !== "details"
+              ? "details"
+              : state.focusTarget,
+          isSidebarOverlayOpen: false,
+        }
+      }
+
+      if (!action.isSidebarVisible) {
         if (state.focusTarget === "details") {
           return state
         }

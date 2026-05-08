@@ -17,10 +17,78 @@ import { wordExampleQueryOptions } from "../common/word-detail/word-detail.queri
 import { TagsManagerDialog } from "../common/word-tags/tags-manager-dialog"
 import { Autocomplete } from "./components/autocomplete"
 import { RecentSearches } from "./components/recent-searches"
-import { NARROW_TERMINAL_WIDTH, SIDEBAR_WIDTH } from "./word-search.constants"
+import {
+  FULLSCREEN_OVERLAY_WIDTH,
+  NARROW_TERMINAL_WIDTH,
+  SIDEBAR_WIDTH,
+} from "./word-search.constants"
 import { recentSearchesQueryOptions } from "./word-search.queries"
 import { initialWordSearchState, wordSearchReducer } from "./word-search.reducer"
 import type { TagsManagerDialogWord } from "./word-search.types"
+
+type SidebarContentProps = {
+  autocompleteFocused: boolean
+  onActiveChange: (active: boolean) => void
+  onChange: (nextValue: string) => void
+  onError: (error: unknown) => void
+  onRecentSelect: (item: WiktionarySearchItem) => void
+  onRecentSelectedIndexChange: (index: number | null) => void
+  onSelect: (item: WiktionarySearchItem) => void
+  query: string
+  recentFocused: boolean
+  recentSearches: RecentSearch[]
+  recentSelectedIndex: number | null
+  stateIsAutocompleteActive: boolean
+}
+
+function SidebarContent({
+  autocompleteFocused,
+  onActiveChange,
+  onChange,
+  onError,
+  onRecentSelect,
+  onRecentSelectedIndexChange,
+  onSelect,
+  query,
+  recentFocused,
+  recentSearches,
+  recentSelectedIndex,
+  stateIsAutocompleteActive,
+}: SidebarContentProps) {
+  return (
+    <>
+      <box
+        backgroundColor={autocompleteFocused ? draculaColors.currentLine : draculaColors.background}
+        flexDirection="column"
+        zIndex={stateIsAutocompleteActive ? 100 : 0}
+      >
+        <Autocomplete
+          value={query}
+          onChange={onChange}
+          onSelect={onSelect}
+          focused={autocompleteFocused}
+          autoHighlightFirst={true}
+          debounceMs={400}
+          maxVisibleItems={20}
+          placeholder="Enter a Finnish word..."
+          loaderFn={searchFinnishWiktionaryEntries}
+          onError={onError}
+          onActiveChange={onActiveChange}
+        />
+      </box>
+
+      <box flexGrow={1} minHeight={0}>
+        <RecentSearches
+          items={recentSearches}
+          selectedIndex={recentSelectedIndex}
+          onSelectedIndexChange={onRecentSelectedIndexChange}
+          onSelect={onRecentSelect}
+          focused={recentFocused}
+        />
+      </box>
+    </>
+  )
+}
 
 export function WordSearch() {
   const dialog = useDialog()
@@ -51,11 +119,15 @@ export function WordSearch() {
   )
 
   const isNarrowTerminal = width < NARROW_TERMINAL_WIDTH
-  const isSidebarVisible = !isNarrowTerminal && state.isSidebarExpanded
+  const isFullScreenOverlay = width < FULLSCREEN_OVERLAY_WIDTH
+  const isSplitSidebarVisible = !isNarrowTerminal && state.isSidebarExpanded
+  const isOverlayVisible = isNarrowTerminal && state.isSidebarOverlayOpen
+  const isSidebarVisible = isSplitSidebarVisible || isOverlayVisible
   const autocompleteFocused =
     !isDialogOpen && isSidebarVisible && state.focusTarget === "autocomplete"
   const recentFocused = !isDialogOpen && isSidebarVisible && state.focusTarget === "recent"
-  const detailsFocused = !isDialogOpen && (!isSidebarVisible || state.focusTarget === "details")
+  const detailsFocused =
+    !isDialogOpen && !isOverlayVisible && (!isSplitSidebarVisible || state.focusTarget === "details")
   const detailSelection = selectedItem
     ? {
         query: selectedItem.value,
@@ -226,40 +298,28 @@ export function WordSearch() {
   })
 
   return (
-    <box width="100%" height="100%" flexDirection={isSidebarVisible ? "row" : "column"} gap={2}>
-      {isSidebarVisible ? (
+    <box
+      width="100%"
+      height="100%"
+      flexDirection={isSplitSidebarVisible ? "row" : "column"}
+      gap={2}
+    >
+      {isSplitSidebarVisible ? (
         <box width={SIDEBAR_WIDTH} flexDirection="column" gap={1} minHeight={0}>
-          <box
-            backgroundColor={
-              autocompleteFocused ? draculaColors.currentLine : draculaColors.background
-            }
-            flexDirection="column"
-            zIndex={state.isAutocompleteActive ? 100 : 0}
-          >
-            <Autocomplete
-              value={query}
-              onChange={handleQueryChange}
-              onSelect={handleAutocompleteSelect}
-              focused={autocompleteFocused}
-              autoHighlightFirst={true}
-              debounceMs={400}
-              maxVisibleItems={20}
-              placeholder="Enter a Finnish word..."
-              loaderFn={searchFinnishWiktionaryEntries}
-              onError={handleError}
-              onActiveChange={handleAutocompleteActiveChange}
-            />
-          </box>
-
-          <box flexGrow={1} minHeight={0}>
-            <RecentSearches
-              items={recentSearches}
-              selectedIndex={recentSelectedIndex}
-              onSelectedIndexChange={handleRecentSelectedIndexChange}
-              onSelect={handleRecentSelect}
-              focused={recentFocused}
-            />
-          </box>
+          <SidebarContent
+            autocompleteFocused={autocompleteFocused}
+            onActiveChange={handleAutocompleteActiveChange}
+            onChange={handleQueryChange}
+            onError={handleError}
+            onRecentSelect={handleRecentSelect}
+            onRecentSelectedIndexChange={handleRecentSelectedIndexChange}
+            onSelect={handleAutocompleteSelect}
+            query={query}
+            recentFocused={recentFocused}
+            recentSearches={recentSearches}
+            recentSelectedIndex={recentSelectedIndex}
+            stateIsAutocompleteActive={state.isAutocompleteActive}
+          />
         </box>
       ) : null}
 
@@ -276,6 +336,43 @@ export function WordSearch() {
           onSelectionStateChange={handleSelectionStateChange}
         />
       </box>
+
+      {isOverlayVisible ? (
+        <box
+          position="absolute"
+          left={0}
+          top={0}
+          bottom={0}
+          right={isFullScreenOverlay ? 0 : undefined}
+          width={isFullScreenOverlay ? undefined : SIDEBAR_WIDTH}
+          zIndex={200}
+        >
+          <box
+            width="100%"
+            height="100%"
+            flexDirection="column"
+            gap={1}
+            minHeight={0}
+            backgroundColor={draculaColors.background}
+            zIndex={200}
+          >
+            <SidebarContent
+              autocompleteFocused={autocompleteFocused}
+              onActiveChange={handleAutocompleteActiveChange}
+              onChange={handleQueryChange}
+              onError={handleError}
+              onRecentSelect={handleRecentSelect}
+              onRecentSelectedIndexChange={handleRecentSelectedIndexChange}
+              onSelect={handleAutocompleteSelect}
+              query={query}
+              recentFocused={recentFocused}
+              recentSearches={recentSearches}
+              recentSelectedIndex={recentSelectedIndex}
+              stateIsAutocompleteActive={state.isAutocompleteActive}
+            />
+          </box>
+        </box>
+      ) : null}
 
       {errorMessage ? (
         <box position="absolute" bottom={0} right={0} border borderStyle="rounded" paddingX={1}>
