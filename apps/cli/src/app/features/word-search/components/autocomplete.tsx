@@ -4,6 +4,8 @@ import React from "react"
 import { draculaColors, homeScreenTheme } from "../../../theme/colors"
 import { useDebounce } from "../../../hooks/use-debounce"
 
+type AutocompleteItem = { label: string; value: string }
+
 type AutocompleteProps<T> = {
   value: string
   onChange: (value: string) => void
@@ -11,6 +13,7 @@ type AutocompleteProps<T> = {
   focused?: boolean
   loaderFn: (query: string, signal: AbortSignal) => Promise<T[]>
   createItemFromValue?: (value: string) => T
+  getItemKey?: (item: T) => string
   getItemDescription?: (item: T) => string | undefined
   onError?: (error: unknown) => void
   onActiveChange?: (active: boolean) => void
@@ -18,15 +21,207 @@ type AutocompleteProps<T> = {
   debounceMs?: number
   minQueryLength?: number
   maxVisibleItems?: number
+  autoHighlightFirst?: boolean
+  allowFreeTextSubmit?: boolean
 }
 
-export function Autocomplete<T extends { label: string; value: string }>({
+type AutocompleteState<T> = {
+  isFocused: boolean
+  isOpen: boolean
+  isLoading: boolean
+  items: T[]
+  highlightedKey: string | null
+  wasDismissedByEscape: boolean
+  requestedFocus: boolean
+}
+
+type AutocompleteAction<T> =
+  | { type: "FOCUS" }
+  | { type: "BLUR" }
+  | { type: "REQUEST_FOCUS"; focused: boolean }
+  | { type: "INPUT_CHANGED" }
+  | { type: "LOAD_START" }
+  | {
+      type: "LOAD_SUCCESS"
+      items: T[]
+      getItemKey: (item: T) => string
+      autoHighlightFirst: boolean
+      maxVisibleItems: number
+    }
+  | { type: "LOAD_ERROR" }
+  | { type: "CLEAR_RESULTS" }
+  | { type: "MOVE_UP"; visibleItems: T[]; getItemKey: (item: T) => string }
+  | { type: "MOVE_DOWN"; visibleItems: T[]; getItemKey: (item: T) => string }
+  | { type: "ESCAPE" }
+  | { type: "SELECT" }
+
+function getVisibleItems<T>(items: T[], maxVisibleItems: number) {
+  return items.slice(0, maxVisibleItems)
+}
+
+function getNextHighlightedKey<T>(
+  direction: "up" | "down",
+  visibleItems: T[],
+  highlightedKey: string | null,
+  getItemKey: (item: T) => string,
+) {
+  if (visibleItems.length === 0) {
+    return null
+  }
+
+  const fallbackIndex = direction === "down" ? 0 : visibleItems.length - 1
+  const currentIndex =
+    highlightedKey === null
+      ? -1
+      : visibleItems.findIndex((item) => getItemKey(item) === highlightedKey)
+
+  if (currentIndex === -1) {
+    return getItemKey(visibleItems[fallbackIndex])
+  }
+
+  const nextIndex =
+    direction === "down"
+      ? (currentIndex + 1) % visibleItems.length
+      : (currentIndex - 1 + visibleItems.length) % visibleItems.length
+
+  return getItemKey(visibleItems[nextIndex])
+}
+
+function createInitialState<T>(): AutocompleteState<T> {
+  return {
+    isFocused: false,
+    isOpen: false,
+    isLoading: false,
+    items: [],
+    highlightedKey: null,
+    wasDismissedByEscape: false,
+    requestedFocus: true,
+  }
+}
+
+function autocompleteReducer<T>(
+  state: AutocompleteState<T>,
+  action: AutocompleteAction<T>,
+): AutocompleteState<T> {
+  switch (action.type) {
+    case "FOCUS":
+      return {
+        ...state,
+        isFocused: true,
+        isOpen: state.items.length > 0 && !state.wasDismissedByEscape,
+      }
+    case "BLUR":
+      return {
+        ...state,
+        isFocused: false,
+        isOpen: false,
+        highlightedKey: null,
+        requestedFocus: false,
+      }
+    case "REQUEST_FOCUS":
+      return {
+        ...state,
+        requestedFocus: action.focused,
+      }
+    case "INPUT_CHANGED":
+      return {
+        ...state,
+        isOpen: false,
+        highlightedKey: null,
+        wasDismissedByEscape: false,
+      }
+    case "LOAD_START":
+      return {
+        ...state,
+        isLoading: true,
+      }
+    case "LOAD_SUCCESS": {
+      const visibleItems = getVisibleItems(action.items, action.maxVisibleItems)
+      const highlightedItem = visibleItems.find(
+        (item) => action.getItemKey(item) === state.highlightedKey,
+      )
+      const highlightedKey = highlightedItem
+        ? action.getItemKey(highlightedItem)
+        : action.autoHighlightFirst && visibleItems.length > 0
+          ? action.getItemKey(visibleItems[0])
+          : null
+
+      return {
+        ...state,
+        isLoading: false,
+        items: action.items,
+        highlightedKey,
+        isOpen: state.isFocused && action.items.length > 0 && !state.wasDismissedByEscape,
+      }
+    }
+    case "LOAD_ERROR":
+      return {
+        ...state,
+        isLoading: false,
+        items: [],
+        isOpen: false,
+        highlightedKey: null,
+      }
+    case "CLEAR_RESULTS":
+      return {
+        ...state,
+        isLoading: false,
+        items: [],
+        isOpen: false,
+        highlightedKey: null,
+        wasDismissedByEscape: false,
+      }
+    case "MOVE_UP":
+      return {
+        ...state,
+        isOpen: action.visibleItems.length > 0,
+        highlightedKey: getNextHighlightedKey(
+          "up",
+          action.visibleItems,
+          state.highlightedKey,
+          action.getItemKey,
+        ),
+        wasDismissedByEscape: false,
+      }
+    case "MOVE_DOWN":
+      return {
+        ...state,
+        isOpen: action.visibleItems.length > 0,
+        highlightedKey: getNextHighlightedKey(
+          "down",
+          action.visibleItems,
+          state.highlightedKey,
+          action.getItemKey,
+        ),
+        wasDismissedByEscape: false,
+      }
+    case "ESCAPE":
+      return {
+        ...state,
+        isOpen: false,
+        highlightedKey: null,
+        wasDismissedByEscape: true,
+      }
+    case "SELECT":
+      return {
+        ...state,
+        isOpen: false,
+        highlightedKey: null,
+        wasDismissedByEscape: true,
+      }
+    default:
+      return state
+  }
+}
+
+export function Autocomplete<T extends AutocompleteItem>({
   value,
   onChange,
   onSelect,
   focused,
   loaderFn,
   createItemFromValue,
+  getItemKey,
   getItemDescription,
   onError,
   onActiveChange,
@@ -34,24 +229,29 @@ export function Autocomplete<T extends { label: string; value: string }>({
   debounceMs = 300,
   minQueryLength = 2,
   maxVisibleItems = 5,
+  autoHighlightFirst = false,
+  allowFreeTextSubmit = true,
 }: AutocompleteProps<T>) {
-  const [items, setItems] = React.useState<T[]>([])
-  const [isFocused, setIsFocused] = React.useState(false)
-  const [isOpen, setIsOpen] = React.useState(false)
-  const [isLoading, setIsLoading] = React.useState(false)
-  const [highlightedIndex, setHighlightedIndex] = React.useState<number | null>(null)
-  const [shouldFocusInput, setShouldFocusInput] = React.useState(true)
-  const [wasDismissedByEscape, setWasDismissedByEscape] = React.useState(false)
+  const [state, dispatch] = React.useReducer(autocompleteReducer<T>, undefined, createInitialState)
   const latestRequestIdRef = React.useRef(0)
-  const abortControllerRef = React.useRef<AbortController | null>(null)
   const inputRef = React.useRef<InputRenderable | null>(null)
-  const itemsRef = React.useRef<T[]>([])
-  const isFocusedRef = React.useRef(false)
   const pendingProgrammaticValueRef = React.useRef<string | null>(null)
-  const wasDismissedByEscapeRef = React.useRef(false)
   const debouncedValue = useDebounce(value, debounceMs)
-  const visibleItems = items.slice(0, maxVisibleItems)
-  const active = isFocused || isOpen || isLoading
+  const isFocusControlled = focused !== undefined
+  const itemKeyGetter = React.useCallback(
+    (item: T) => getItemKey?.(item) ?? item.value,
+    [getItemKey],
+  )
+  const visibleItems = React.useMemo(
+    () => getVisibleItems(state.items, maxVisibleItems),
+    [maxVisibleItems, state.items],
+  )
+  const highlightedItem = React.useMemo(
+    () => visibleItems.find((item) => itemKeyGetter(item) === state.highlightedKey) ?? null,
+    [itemKeyGetter, state.highlightedKey, visibleItems],
+  )
+  const active = state.isFocused || state.isOpen || state.isLoading
+  const inputShouldBeFocused = isFocusControlled ? focused : state.requestedFocus
 
   const handleInputChange = React.useCallback(
     (nextValue: string) => {
@@ -60,7 +260,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
         return
       }
 
-      setWasDismissedByEscape(false)
+      dispatch({ type: "INPUT_CHANGED" })
       onChange(nextValue)
     },
     [onChange],
@@ -71,59 +271,58 @@ export function Autocomplete<T extends { label: string; value: string }>({
       const nextValue = item.value
 
       pendingProgrammaticValueRef.current = nextValue
-      setWasDismissedByEscape(true)
+      dispatch({ type: "SELECT" })
       onChange(nextValue)
       onSelect(item)
-      setIsOpen(false)
-      setHighlightedIndex(null)
     },
     [onChange, onSelect],
   )
 
   const submitCurrentValue = React.useCallback(() => {
-    if (highlightedIndex !== null) {
-      const item = visibleItems[highlightedIndex]
+    if (state.isOpen && highlightedItem) {
+      selectItem(highlightedItem)
+      return
+    }
 
-      if (item) {
-        selectItem(item)
-      }
+    if (state.isOpen && visibleItems.length > 0) {
+      selectItem(visibleItems[0])
+      return
+    }
 
+    if (!allowFreeTextSubmit) {
       return
     }
 
     const customItem = createItemFromValue
       ? createItemFromValue(value)
-      : ({ label: value, value, name: value } as unknown as T)
+      : ({ label: value, value } as unknown as T)
 
-    setWasDismissedByEscape(true)
-    setIsOpen(false)
-    setHighlightedIndex(null)
+    dispatch({ type: "SELECT" })
     onSelect(customItem)
-  }, [createItemFromValue, highlightedIndex, onSelect, selectItem, value, visibleItems])
+  }, [
+    allowFreeTextSubmit,
+    createItemFromValue,
+    highlightedItem,
+    onSelect,
+    selectItem,
+    state.isOpen,
+    value,
+    visibleItems,
+  ])
 
   React.useEffect(() => {
-    itemsRef.current = items
-  }, [items])
-
-  React.useEffect(() => {
-    isFocusedRef.current = isFocused
-  }, [isFocused])
-
-  React.useEffect(() => {
-    if (focused !== undefined) {
-      setShouldFocusInput(focused)
+    if (focused === undefined) {
+      return
     }
+
+    dispatch({ type: "REQUEST_FOCUS", focused })
   }, [focused])
 
   React.useEffect(() => {
-    if (shouldFocusInput) {
+    if (inputShouldBeFocused) {
       inputRef.current?.focus()
     }
-  }, [shouldFocusInput])
-
-  React.useEffect(() => {
-    wasDismissedByEscapeRef.current = wasDismissedByEscape
-  }, [wasDismissedByEscape])
+  }, [inputShouldBeFocused])
 
   React.useEffect(() => {
     if (pendingProgrammaticValueRef.current === value) {
@@ -136,23 +335,6 @@ export function Autocomplete<T extends { label: string; value: string }>({
   }, [active, onActiveChange])
 
   React.useEffect(() => {
-    const query = value.trim()
-
-    if (query.length < minQueryLength) {
-      setItems([])
-      setIsOpen(false)
-      setIsLoading(false)
-      setHighlightedIndex(null)
-      return
-    }
-
-      if (query !== debouncedValue.trim()) {
-        setIsOpen(false)
-        setHighlightedIndex(null)
-      }
-  }, [debouncedValue, minQueryLength, value])
-
-  React.useEffect(() => {
     const input = inputRef.current
 
     if (!input) {
@@ -160,28 +342,25 @@ export function Autocomplete<T extends { label: string; value: string }>({
     }
 
     const handleFocused = () => {
-      if (focused === undefined) {
-        setShouldFocusInput(true)
+      if (!isFocusControlled) {
+        dispatch({ type: "REQUEST_FOCUS", focused: true })
       }
 
-      setIsFocused(true)
-
-      if (itemsRef.current.length > 0 && !wasDismissedByEscapeRef.current) {
-        setIsOpen(true)
-      }
+      dispatch({ type: "FOCUS" })
     }
 
     const handleBlurred = () => {
-      if (focused === undefined) {
-        setShouldFocusInput(false)
+      if (!isFocusControlled) {
+        dispatch({ type: "REQUEST_FOCUS", focused: false })
       }
 
-      setIsFocused(false)
-      setIsOpen(false)
-      setHighlightedIndex(null)
+      dispatch({ type: "BLUR" })
     }
 
-    setIsFocused(input.focused)
+    if (input.focused) {
+      dispatch({ type: "FOCUS" })
+    }
+
     input.on(RenderableEvents.FOCUSED, handleFocused)
     input.on(RenderableEvents.BLURRED, handleBlurred)
 
@@ -189,37 +368,22 @@ export function Autocomplete<T extends { label: string; value: string }>({
       input.off(RenderableEvents.FOCUSED, handleFocused)
       input.off(RenderableEvents.BLURRED, handleBlurred)
     }
-  }, [focused])
-
-  React.useEffect(() => {
-    return () => {
-      abortControllerRef.current?.abort()
-    }
-  }, [])
+  }, [isFocusControlled])
 
   React.useEffect(() => {
     const query = debouncedValue.trim()
 
     if (query.length < minQueryLength) {
       latestRequestIdRef.current += 1
-      abortControllerRef.current?.abort()
-      abortControllerRef.current = null
-      setItems([])
-      setIsOpen(false)
-      setIsLoading(false)
-      setHighlightedIndex(null)
-      setWasDismissedByEscape(false)
+      dispatch({ type: "CLEAR_RESULTS" })
       return
     }
-
-    abortControllerRef.current?.abort()
 
     const controller = new AbortController()
     const requestId = latestRequestIdRef.current + 1
 
-    abortControllerRef.current = controller
     latestRequestIdRef.current = requestId
-    setIsLoading(true)
+    dispatch({ type: "LOAD_START" })
 
     void loaderFn(query, controller.signal)
       .then((nextItems) => {
@@ -227,32 +391,38 @@ export function Autocomplete<T extends { label: string; value: string }>({
           return
         }
 
-        setItems(nextItems)
-        setIsLoading(false)
-        setHighlightedIndex(null)
-        setIsOpen(
-          isFocusedRef.current && nextItems.length > 0 && !wasDismissedByEscapeRef.current,
-        )
+        dispatch({
+          type: "LOAD_SUCCESS",
+          items: nextItems,
+          getItemKey: itemKeyGetter,
+          autoHighlightFirst,
+          maxVisibleItems,
+        })
       })
       .catch((error) => {
         if (controller.signal.aborted || requestId !== latestRequestIdRef.current) {
           return
         }
 
-        setItems([])
-        setIsOpen(false)
-        setIsLoading(false)
-        setHighlightedIndex(null)
+        dispatch({ type: "LOAD_ERROR" })
         onError?.(error)
       })
 
     return () => {
       controller.abort()
     }
-  }, [debouncedValue, loaderFn, minQueryLength, onError])
+  }, [
+    autoHighlightFirst,
+    debouncedValue,
+    itemKeyGetter,
+    loaderFn,
+    maxVisibleItems,
+    minQueryLength,
+    onError,
+  ])
 
   useKeyboard((key) => {
-    if (!isFocusedRef.current) {
+    if (!state.isFocused) {
       return
     }
 
@@ -263,28 +433,19 @@ export function Autocomplete<T extends { label: string; value: string }>({
       return
     }
 
-    if (key.name === "up" && isOpen && visibleItems.length > 0) {
-      setHighlightedIndex((currentIndex) =>
-        currentIndex === null || currentIndex === 0
-          ? visibleItems.length - 1
-          : currentIndex - 1,
-      )
+    if (key.name === "up" && visibleItems.length > 0) {
+      dispatch({ type: "MOVE_UP", visibleItems, getItemKey: itemKeyGetter })
       return
     }
 
-    if (key.name === "down" && isOpen && visibleItems.length > 0) {
-      setHighlightedIndex((currentIndex) =>
-        currentIndex === null || currentIndex === visibleItems.length - 1
-          ? 0
-          : currentIndex + 1,
-      )
+    if (key.name === "down" && visibleItems.length > 0) {
+      dispatch({ type: "MOVE_DOWN", visibleItems, getItemKey: itemKeyGetter })
       return
     }
 
     if (key.name === "escape") {
-      if (isOpen) {
-        setIsOpen(false)
-        setWasDismissedByEscape(true)
+      if (state.isOpen) {
+        dispatch({ type: "ESCAPE" })
         return
       }
 
@@ -293,20 +454,29 @@ export function Autocomplete<T extends { label: string; value: string }>({
         return
       }
 
-      setWasDismissedByEscape(true)
-      setShouldFocusInput(false)
+      dispatch({ type: "ESCAPE" })
+
+      if (!isFocusControlled) {
+        dispatch({ type: "REQUEST_FOCUS", focused: false })
+      }
+
       inputRef.current?.blur()
     }
   })
 
+  // Combobox behavior contract:
+  // - ArrowDown/ArrowUp on a closed menu open it and highlight first/last visible item.
+  // - Enter selects the highlighted item, or the first visible item when the menu is open.
+  // - Escape closes the open menu only; when already closed it falls back to clear-or-blur.
+
   return (
-    <box width="100%" position="relative" zIndex={isOpen ? 100 : 0}>
+    <box width="100%" position="relative" zIndex={state.isOpen ? 100 : 0}>
       <box paddingX={2} paddingY={1} alignItems="center">
         <input
           ref={inputRef}
           width="100%"
           position="relative"
-          focused={shouldFocusInput}
+          focused={inputShouldBeFocused}
           flexGrow={1}
           value={value}
           placeholder={placeholder}
@@ -314,14 +484,14 @@ export function Autocomplete<T extends { label: string; value: string }>({
           onInput={handleInputChange}
           onSubmit={submitCurrentValue}
         />
-        {isLoading ? (
+        {state.isLoading ? (
           <text position="absolute" right={0}>
             <span fg={homeScreenTheme.autocompleteLoading}>• </span>
           </text>
         ) : null}
       </box>
 
-      {isOpen && visibleItems.length > 0 ? (
+      {state.isOpen && visibleItems.length > 0 ? (
         <box
           position="absolute"
           top={3}
@@ -331,9 +501,10 @@ export function Autocomplete<T extends { label: string; value: string }>({
           backgroundColor={homeScreenTheme.autocompleteMenuBackground}
           flexDirection="column"
         >
-          {visibleItems.map((item, index) => {
+          {visibleItems.map((item) => {
             const description = getItemDescription?.(item)
-            const isHighlighted = index === highlightedIndex
+            const itemKey = itemKeyGetter(item)
+            const isHighlighted = itemKey === state.highlightedKey
             const bg = isHighlighted
               ? homeScreenTheme.autocompleteItemHighlightedBackground
               : homeScreenTheme.autocompleteMenuBackground
@@ -343,7 +514,7 @@ export function Autocomplete<T extends { label: string; value: string }>({
 
             return (
               <box
-                key={`${item.value}:${item.label}`}
+                key={itemKey}
                 paddingX={2}
                 paddingY={0}
                 flexDirection="column"

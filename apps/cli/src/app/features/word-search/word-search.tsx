@@ -241,6 +241,7 @@ export function WordSearch() {
               onChange={handleQueryChange}
               onSelect={handleAutocompleteSelect}
               focused={autocompleteFocused}
+              autoHighlightFirst={true}
               maxVisibleItems={20}
               placeholder="Enter a Finnish word..."
               loaderFn={searchFinnishWiktionaryEntries}
