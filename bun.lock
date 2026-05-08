@@ -7,7 +7,7 @@
     },
     "apps/cli": {
       "name": "puhutko-lite",
-      "version": "1.1.8",
+      "version": "1.2.0",
       "bin": {
         "puhutko-lite": "dist/puhutko-lite",
       },
