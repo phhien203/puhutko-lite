@@ -53,18 +53,25 @@ const verbPersonTags = new Map<string, FinnishVerbPerson>([
   ["third-person", "3"],
 ])
 
-const supportedGradationPatterns = new Map<string, ConsonantGradation>([
-  ["kk-k", { pattern: "kk-k", strong: "kk", weak: "k" }],
-  ["pp-p", { pattern: "pp-p", strong: "pp", weak: "p" }],
-  ["tt-t", { pattern: "tt-t", strong: "tt", weak: "t" }],
-  ["nk-ng", { pattern: "nk-ng", strong: "nk", weak: "ng" }],
-  ["nt-nn", { pattern: "nt-nn", strong: "nt", weak: "nn" }],
-  ["lt-ll", { pattern: "lt-ll", strong: "lt", weak: "ll" }],
-  ["rt-rr", { pattern: "rt-rr", strong: "rt", weak: "rr" }],
-  ["mp-mm", { pattern: "mp-mm", strong: "mp", weak: "mm" }],
-  ["k-o", { pattern: "k-∅", strong: "k", weak: "ø" }],
-  ["p-v", { pattern: "p-v", strong: "p", weak: "v" }],
-  ["t-d", { pattern: "t-d", strong: "t", weak: "d" }],
+type NormalizedConsonantGradation = ConsonantGradation & {
+  sourcePattern: string
+}
+
+const supportedGradationPatterns = new Map<string, NormalizedConsonantGradation>([
+  ["kk-k", { pattern: "kk-k", strong: "kk", weak: "k", sourcePattern: "kk-k" }],
+  ["pp-p", { pattern: "pp-p", strong: "pp", weak: "p", sourcePattern: "pp-p" }],
+  ["tt-t", { pattern: "tt-t", strong: "tt", weak: "t", sourcePattern: "tt-t" }],
+  ["nk-ng", { pattern: "nk-ng", strong: "nk", weak: "ng", sourcePattern: "nk-ng" }],
+  ["nt-nn", { pattern: "nt-nn", strong: "nt", weak: "nn", sourcePattern: "nt-nn" }],
+  ["lt-ll", { pattern: "lt-ll", strong: "lt", weak: "ll", sourcePattern: "lt-ll" }],
+  ["rt-rr", { pattern: "rt-rr", strong: "rt", weak: "rr", sourcePattern: "rt-rr" }],
+  ["mp-mm", { pattern: "mp-mm", strong: "mp", weak: "mm", sourcePattern: "mp-mm" }],
+  ["k-o", { pattern: "k-∅", strong: "k", weak: "ø", sourcePattern: "k-o" }],
+  ["p-v", { pattern: "p-v", strong: "p", weak: "v", sourcePattern: "p-v" }],
+  ["t-d", { pattern: "t-d", strong: "t", weak: "d", sourcePattern: "t-d" }],
+  ["k-j", { pattern: "k-j", strong: "k", weak: "j", sourcePattern: "k-j" }],
+  ["k-v", { pattern: "k-v", strong: "k", weak: "v", sourcePattern: "k-v" }],
+  ["ik-j", { pattern: "k-j", strong: "k", weak: "j", sourcePattern: "ik-j" }],
 ])
 
 export async function getFinnishWordDetail(word: string, signal?: AbortSignal): Promise<WordDetail | null> {
@@ -245,12 +252,7 @@ function parseConsonantGradation(word: string, forms: KaikkiEntry["forms"]): Con
       continue
     }
 
-    const pattern = className
-      .replace(/\s+gradation$/, "")
-      .replace(/[–—]/g, "-")
-      .replace(/∅/g, "o")
-
-    const gradation = supportedGradationPatterns.get(pattern)
+    const gradation = normalizeConsonantGradation(className)
 
     if (gradation) {
       const strongStart = word.includes(gradation.strong)
@@ -281,7 +283,16 @@ function parseConsonantGradation(word: string, forms: KaikkiEntry["forms"]): Con
   return undefined
 }
 
-function inferStrongGradeStart(word: string, gradation: ConsonantGradation, forms: KaikkiEntry["forms"]): number | undefined {
+function normalizeConsonantGradation(className: string) {
+  const pattern = className
+    .replace(/\s+gradation$/, "")
+    .replace(/[–—]/g, "-")
+    .replace(/∅/g, "o")
+
+  return supportedGradationPatterns.get(pattern)
+}
+
+function inferStrongGradeStart(word: string, gradation: NormalizedConsonantGradation, forms: KaikkiEntry["forms"]): number | undefined {
   const starts = getOccurrenceStarts(word, gradation.strong)
 
   if (starts.length === 0) {
@@ -292,8 +303,8 @@ function inferStrongGradeStart(word: string, gradation: ConsonantGradation, form
 
   for (const start of starts) {
     const prefix = word.slice(0, start)
-    const weakPrefix = gradation.weak === "ø" ? prefix : `${prefix}${gradation.weak}`
     const strongPrefix = `${prefix}${gradation.strong}`
+    const weakPrefix = getWeakPrefixForStrongInference(word, gradation, start)
 
     if (formTokens.some((token) => token.startsWith(weakPrefix) && !token.startsWith(strongPrefix))) {
       return start
@@ -301,6 +312,18 @@ function inferStrongGradeStart(word: string, gradation: ConsonantGradation, form
   }
 
   return undefined
+}
+
+function getWeakPrefixForStrongInference(word: string, gradation: NormalizedConsonantGradation, start: number) {
+  if (gradation.weak === "ø") {
+    return word.slice(0, start)
+  }
+
+  if (gradation.sourcePattern === "ik-j" && start > 0 && word.slice(start - 1, start + 1) === "ik") {
+    return `${word.slice(0, start - 1)}${gradation.weak}`
+  }
+
+  return `${word.slice(0, start)}${gradation.weak}`
 }
 
 function inferWeakGradeStart(word: string, gradation: ConsonantGradation, forms: KaikkiEntry["forms"]): number | undefined {
