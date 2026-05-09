@@ -333,7 +333,8 @@ function inferWeakGradeStart(word: string, gradation: ConsonantGradation, forms:
     return undefined
   }
 
-  const formTokens = getFormTokens(forms)
+  const finiteActiveFormTokens = getFormTokens(forms, { finiteActiveVerbOnly: true })
+  const formTokens = finiteActiveFormTokens.length > 0 ? finiteActiveFormTokens : getFormTokens(forms)
 
   for (let index = starts.length - 1; index >= 0; index -= 1) {
     const start = starts[index]
@@ -366,13 +367,34 @@ function getOccurrenceStarts(value: string, search: string) {
   return starts
 }
 
-function getFormTokens(forms: KaikkiEntry["forms"]) {
+function getFormTokens(
+  forms: KaikkiEntry["forms"],
+  options?: { finiteActiveVerbOnly?: boolean },
+) {
   return unique(
     forms
-      ?.filter((form) => form.form && form.form !== "-" && form.tags?.some((tag) => !ignoredFormTags.has(tag)))
+      ?.filter((form) => {
+        if (!form.form || form.form === "-") {
+          return false
+        }
+
+        if (!form.tags?.some((tag) => !ignoredFormTags.has(tag))) {
+          return false
+        }
+
+        if (!options?.finiteActiveVerbOnly) {
+          return true
+        }
+
+        return isFiniteActiveVerbForm(form.tags)
+      })
       .flatMap((form) => form.form?.split(/\s+/) ?? [])
       .filter(Boolean) ?? [],
   )
+}
+
+function isFiniteActiveVerbForm(tags: string[]) {
+  return getVerbMood(tags) !== undefined && !tags.includes("passive")
 }
 
 function getVisibleTags(tags: string[]) {
