@@ -28,6 +28,14 @@ import {
 
 const SIDEBAR_WIDTH = 46
 
+function getDetailsContentWidth(terminalWidth: number, isSplitSidebarVisible: boolean) {
+  const layoutGapWidth = isSplitSidebarVisible ? 2 : 0
+  const sidebarWidth = isSplitSidebarVisible ? SIDEBAR_WIDTH : 0
+  const detailsHorizontalPadding = 8
+
+  return Math.max(0, terminalWidth - sidebarWidth - layoutGapWidth - detailsHorizontalPadding)
+}
+
 type FocusTarget = "tags" | "words" | "details"
 
 type SidebarContentProps = {
@@ -248,6 +256,7 @@ export function WordExplorer() {
   const isSplitSidebarVisible = !isNarrowTerminal && isSidebarExpanded
   const isOverlayVisible = isNarrowTerminal && isSidebarOverlayOpen
   const isSidebarVisible = isSplitSidebarVisible || isOverlayVisible
+  const detailsContentWidth = getDetailsContentWidth(width, isSplitSidebarVisible)
   const detailsFocused =
     !isDialogOpen && !isOverlayVisible && (!isSplitSidebarVisible || focusTarget === "details")
 
@@ -559,6 +568,7 @@ export function WordExplorer() {
         backgroundColor={detailsFocused ? draculaColors.currentLine : draculaColors.background}
       >
         <DetailsView
+          contentWidth={detailsContentWidth}
           selection={detailSelection}
           focused={detailsFocused}
           showTagManagementHint={false}

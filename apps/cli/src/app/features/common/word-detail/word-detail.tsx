@@ -8,6 +8,7 @@ import { GradationHeader } from "./gradation"
 import { InflectionTable } from "./inflection-table"
 
 type WordDetailProps = {
+  contentWidth: number
   detail: WordDetail | null
   focused?: boolean
   showTagManagementHint?: boolean
@@ -17,6 +18,7 @@ type WordDetailProps = {
 export { normalizeAsciiFontWord, splitStrongGrade } from "./gradation"
 
 export function WordDetailView({
+  contentWidth,
   detail,
   focused = false,
   showTagManagementHint = true,
@@ -48,7 +50,7 @@ export function WordDetailView({
 
       <box width="100%" flexDirection="column" gap={0}>
         {detail.pronunciations && detail.pronunciations.length > 0 ? (
-          <text>{detail.pronunciations.join(", ")}</text>
+          <text>{detail.pronunciations[0]}</text>
         ) : null}
       </box>
 
@@ -139,7 +141,7 @@ export function WordDetailView({
         )}
       </box>
 
-      <InflectionTable detail={detail} />
+      <InflectionTable detail={detail} contentWidth={contentWidth} />
     </box>
   )
 }

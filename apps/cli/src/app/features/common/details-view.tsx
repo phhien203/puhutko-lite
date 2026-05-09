@@ -15,6 +15,7 @@ export type DetailSelection = {
 }
 
 type DetailsViewProps = {
+  contentWidth: number
   selection: DetailSelection | null
   focused?: boolean
   showTagManagementHint?: boolean
@@ -27,6 +28,7 @@ type DetailsViewProps = {
 }
 
 export function DetailsView({
+  contentWidth,
   selection,
   focused = false,
   showTagManagementHint = true,
@@ -69,6 +71,7 @@ export function DetailsView({
             detail ? (
               <>
                 <WordDetailView
+                  contentWidth={contentWidth}
                   detail={detail}
                   focused={focused}
                   showTagManagementHint={showTagManagementHint}

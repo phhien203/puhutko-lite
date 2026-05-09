@@ -41,6 +41,14 @@ type SidebarContentProps = {
   stateIsAutocompleteActive: boolean
 }
 
+function getDetailsContentWidth(terminalWidth: number, isSplitSidebarVisible: boolean) {
+  const layoutGapWidth = isSplitSidebarVisible ? 2 : 0
+  const sidebarWidth = isSplitSidebarVisible ? SIDEBAR_WIDTH : 0
+  const detailsHorizontalPadding = 8
+
+  return Math.max(0, terminalWidth - sidebarWidth - layoutGapWidth - detailsHorizontalPadding)
+}
+
 function SidebarContent({
   autocompleteFocused,
   onActiveChange,
@@ -123,6 +131,7 @@ export function WordSearch() {
   const isSplitSidebarVisible = !isNarrowTerminal && state.isSidebarExpanded
   const isOverlayVisible = isNarrowTerminal && state.isSidebarOverlayOpen
   const isSidebarVisible = isSplitSidebarVisible || isOverlayVisible
+  const detailsContentWidth = getDetailsContentWidth(width, isSplitSidebarVisible)
   const autocompleteFocused =
     !isDialogOpen && isSidebarVisible && state.focusTarget === "autocomplete"
   const recentFocused = !isDialogOpen && isSidebarVisible && state.focusTarget === "recent"
@@ -331,6 +340,7 @@ export function WordSearch() {
         backgroundColor={detailsFocused ? draculaColors.currentLine : draculaColors.background}
       >
         <DetailsView
+          contentWidth={detailsContentWidth}
           selection={detailSelection}
           focused={detailsFocused}
           onTagSelect={handleTagSelect}

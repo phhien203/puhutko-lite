@@ -25,13 +25,13 @@ const nounCaseDisplayOrder: Array<{ caseName: FinnishNominalCase; label: string 
   { caseName: "partitive", label: "Partitive" },
   { caseName: "genitive", label: "Genitive" },
   "spacer",
-  { caseName: "illative", label: "Illative (S-Mihin) ->[ ]  " },
-  { caseName: "inessive", label: "Inessive (S-Missä)   [*]  " },
-  { caseName: "elative", label: "Elative  (S-Mistä)   [ ]->" },
+  { caseName: "illative", label: "Illative →[ ]  " },
+  { caseName: "inessive", label: "Inessive  [*]  " },
+  { caseName: "elative", label: "Elative   [ ]→" },
   "spacer",
-  { caseName: "allative", label: "Allative (L-Mihin) ->__  " },
-  { caseName: "adessive", label: "Adessive (L-Millä)   _*_  " },
-  { caseName: "ablative", label: "Ablative (L-Miltä)   __->" },
+  { caseName: "allative", label: "Allative →__  " },
+  { caseName: "adessive", label: "Adessive  _*_  " },
+  { caseName: "ablative", label: "Ablative  __→" },
   "spacer",
   { caseName: "essive", label: "Essive" },
   { caseName: "translative", label: "Translative" },
@@ -51,6 +51,14 @@ const verbPolarityColumnGap = 6
 const negativeAuxiliaryWidth = 6
 const negativeParticipleWidth = 7
 const verbPersonColumnWidth = 9
+const caseValueColumnMinWidth = 20
+const verbNegativeColumnMinWidth =
+  verbPersonColumnWidth + negativeAuxiliaryWidth + negativeParticipleWidth + 8
+const verbPolaritySplitMinWidth =
+  verbPersonColumnWidth +
+  verbAffirmativeColumnWidth +
+  verbPolarityColumnGap +
+  verbNegativeColumnMinWidth
 
 const coreVerbSections = [
   { title: "Present", tags: ["indicative", "present"] },
@@ -73,15 +81,22 @@ const allVerbSections = [
 type CaseRow = { name: string; singular: string; plural: string }
 type CaseTableRow = CaseRow | "spacer"
 
-export function InflectionTable({ detail }: { detail: WordDetail }) {
+export function InflectionTable({
+  detail,
+  contentWidth,
+}: {
+  detail: WordDetail
+  contentWidth: number
+}) {
   const inflections = detail.inflections ?? []
+  const stackVerbPolarityColumns = contentWidth < verbPolaritySplitMinWidth
 
   if (inflections.length === 0) {
     return null
   }
 
   if (detail.partOfSpeech === "verb") {
-    return <VerbInflections forms={inflections} />
+    return <VerbInflections forms={inflections} stackPolarityColumns={stackVerbPolarityColumns} />
   }
 
   const isLearningCaseTable = detail.partOfSpeech === "noun" || detail.partOfSpeech === "adjective"
@@ -89,6 +104,7 @@ export function InflectionTable({ detail }: { detail: WordDetail }) {
     ? buildLearningCaseRows(inflections)
     : buildCaseRows(inflections)
   const otherRows = inflections.filter((form) => form.category !== "case")
+  const leadingColumnWidth = caseRows.length > 0 ? getCaseColumnWidth(caseRows) : 12
 
   return (
     <box width="100%" flexDirection="column" gap={1}>
@@ -98,8 +114,8 @@ export function InflectionTable({ detail }: { detail: WordDetail }) {
         </strong>
       </text>
 
-      {caseRows.length > 0 ? <CaseTable rows={caseRows} /> : null}
-      {otherRows.length > 0 ? <OtherForms forms={otherRows} /> : null}
+      {caseRows.length > 0 ? <CaseTable rows={caseRows} contentWidth={contentWidth} /> : null}
+      {otherRows.length > 0 ? <OtherForms forms={otherRows} leadingColumnWidth={leadingColumnWidth} /> : null}
       {caseRows.length === 0 && otherRows.length === 0 ? (
         <text>
           <span fg={homeScreenTheme.mutedText}>No inflections available.</span>
@@ -109,7 +125,13 @@ export function InflectionTable({ detail }: { detail: WordDetail }) {
   )
 }
 
-function VerbInflections({ forms }: { forms: InflectionForm[] }) {
+function VerbInflections({
+  forms,
+  stackPolarityColumns,
+}: {
+  forms: InflectionForm[]
+  stackPolarityColumns: boolean
+}) {
   const hasVerbForms = allVerbSections.some(
     (section) =>
       verbPersons.some((person) => selectVerbValue(forms, section.tags, person)) ||
@@ -125,17 +147,29 @@ function VerbInflections({ forms }: { forms: InflectionForm[] }) {
       </text>
       {hasVerbForms ? (
         <box width="100%" flexDirection="column" gap={1}>
-          <VerbPolaritySection title="Present" tags={coreVerbSections[0].tags} forms={forms} />
-          <VerbPolaritySection title="Simple Past" tags={coreVerbSections[1].tags} forms={forms} />
+          <VerbPolaritySection
+            title="Present"
+            tags={coreVerbSections[0].tags}
+            forms={forms}
+            stackPolarityColumns={stackPolarityColumns}
+          />
+          <VerbPolaritySection
+            title="Simple Past"
+            tags={coreVerbSections[1].tags}
+            forms={forms}
+            stackPolarityColumns={stackPolarityColumns}
+          />
           <VerbPolaritySection
             title="Present Perfect"
             tags={perfectVerbSections[0].tags}
             forms={forms}
+            stackPolarityColumns={stackPolarityColumns}
           />
           <VerbPolaritySection
             title="Past Perfect"
             tags={perfectVerbSections[1].tags}
             forms={forms}
+            stackPolarityColumns={stackPolarityColumns}
           />
           <VerbSimpleSection title="Conditional" tags={conditionalVerbSection.tags} forms={forms} />
         </box>
@@ -152,55 +186,102 @@ function VerbPolaritySection({
   title,
   tags,
   forms,
+  stackPolarityColumns,
 }: {
   title: string
   tags: readonly string[]
   forms: InflectionForm[]
+  stackPolarityColumns: boolean
 }) {
   return (
     <box width="100%" flexDirection="column">
       <text>
         <strong>{title}</strong>
       </text>
+      <box
+        width="100%"
+        flexDirection={stackPolarityColumns ? "column" : "row"}
+        gap={stackPolarityColumns ? 1 : verbPolarityColumnGap}
+      >
+        <VerbPolarityColumn
+          label="Affirmative"
+          fullWidth={stackPolarityColumns}
+          width={
+            stackPolarityColumns ? undefined : verbPersonColumnWidth + verbAffirmativeColumnWidth
+          }
+        >
+          {renderVerbPersonRows((person) => (
+            <box key={`${title}:affirmative:${person.pronoun}`} flexDirection="row" width="100%">
+              <text width={verbPersonColumnWidth}>{person.pronoun}</text>
+              <text width={verbAffirmativeColumnWidth}>
+                {formatAffirmativeVerbValue(title, selectVerbValue(forms, tags, person))}
+              </text>
+            </box>
+          ))}
+          <box flexDirection="row" width="100%">
+            <text width={verbPersonColumnWidth}>
+              <span fg={homeScreenTheme.mutedText}>passive</span>
+            </text>
+            <text width={verbAffirmativeColumnWidth}>
+              {formatAffirmativeVerbValue(title, selectPassiveVerbValue(forms, tags))}
+            </text>
+          </box>
+        </VerbPolarityColumn>
+
+        <VerbPolarityColumn
+          label="Negative"
+          fullWidth={stackPolarityColumns}
+          minWidth={stackPolarityColumns ? undefined : verbNegativeColumnMinWidth}
+        >
+          {renderVerbPersonRows((person) => (
+            <box key={`${title}:negative:${person.pronoun}`} flexDirection="row" width="100%">
+              <text width={verbPersonColumnWidth}>{person.pronoun}</text>
+              <text flexGrow={1}>
+                {formatNegativeVerbValue(selectVerbValue(forms, tags, person, true))}
+              </text>
+            </box>
+          ))}
+          <box flexDirection="row" width="100%">
+            <text width={verbPersonColumnWidth}>
+              <span fg={homeScreenTheme.mutedText}>passive</span>
+            </text>
+            <text flexGrow={1}>
+              {formatNegativeVerbValue(selectPassiveVerbValue(forms, tags, true))}
+            </text>
+          </box>
+        </VerbPolarityColumn>
+      </box>
+    </box>
+  )
+}
+
+function VerbPolarityColumn({
+  label,
+  children,
+  fullWidth = false,
+  minWidth,
+  width,
+}: {
+  label: string
+  children: React.ReactNode
+  fullWidth?: boolean
+  minWidth?: number
+  width?: number
+}) {
+  return (
+    <box
+      width={fullWidth ? "100%" : width}
+      minWidth={minWidth}
+      flexDirection="column"
+      flexGrow={fullWidth || width === undefined ? 1 : 0}
+    >
       <box flexDirection="row" width="100%">
         <text width={verbPersonColumnWidth}> </text>
-        <text width={verbAffirmativeColumnWidth}>
-          <span fg={homeScreenTheme.mutedText}>Affirmative</span>
-        </text>
-        <text width={verbPolarityColumnGap}> </text>
-        <text width={verbPersonColumnWidth}> </text>
         <text flexGrow={1}>
-          <span fg={homeScreenTheme.mutedText}>Negative</span>
+          <span fg={homeScreenTheme.mutedText}>{label}</span>
         </text>
       </box>
-      {renderVerbPersonRows((person) => (
-        <box key={`${title}:${person.pronoun}`} flexDirection="row" width="100%">
-          <text width={verbPersonColumnWidth}>{person.pronoun}</text>
-          <text width={verbAffirmativeColumnWidth}>
-            {formatAffirmativeVerbValue(title, selectVerbValue(forms, tags, person))}
-          </text>
-          <text width={verbPolarityColumnGap}> </text>
-          <text width={verbPersonColumnWidth}>{person.pronoun}</text>
-          <text flexGrow={1}>
-            {formatNegativeVerbValue(selectVerbValue(forms, tags, person, true))}
-          </text>
-        </box>
-      ))}
-      <box flexDirection="row" width="100%">
-        <text width={verbPersonColumnWidth}>
-          <span fg={homeScreenTheme.mutedText}>passive</span>
-        </text>
-        <text width={verbAffirmativeColumnWidth}>
-          {formatAffirmativeVerbValue(title, selectPassiveVerbValue(forms, tags))}
-        </text>
-        <text width={verbPolarityColumnGap}> </text>
-        <text width={verbPersonColumnWidth}>
-          <span fg={homeScreenTheme.mutedText}>passive</span>
-        </text>
-        <text flexGrow={1}>
-          {formatNegativeVerbValue(selectPassiveVerbValue(forms, tags, true))}
-        </text>
-      </box>
+      {children}
     </box>
   )
 }
@@ -241,12 +322,24 @@ function renderVerbPersonRows(
   return verbPersons.map((person) => renderRow(person))
 }
 
-function CaseTable({ rows }: { rows: CaseTableRow[] }) {
-  const caseColumnWidth = Math.max(
-    24,
-    ...rows.filter((row): row is CaseRow => row !== "spacer").map((row) => row.name.length + 1),
+function CaseTable({ rows, contentWidth }: { rows: CaseTableRow[]; contentWidth: number }) {
+  const visibleRows = rows.filter((row): row is CaseRow => row !== "spacer")
+  const caseColumnWidth = getCaseColumnWidth(rows)
+  const singularColumnWidth = Math.max(
+    caseValueColumnMinWidth,
+    "Singular".length + 1,
+    ...visibleRows.map((row) => row.singular.length + 1),
   )
-  const singularColumnWidth = 20
+  const stackCaseColumns = contentWidth < caseColumnWidth + singularColumnWidth + caseValueColumnMinWidth + 1
+
+  if (stackCaseColumns) {
+    return (
+      <box width="100%" flexDirection="column" gap={1}>
+        <CaseValueTable rows={rows} caseColumnWidth={caseColumnWidth} label="Singular" valueKey="singular" />
+        <CaseValueTable rows={rows} caseColumnWidth={caseColumnWidth} label="Plural" valueKey="plural" />
+      </box>
+    )
+  }
 
   return (
     <box width="100%" flexDirection="column">
@@ -270,18 +363,64 @@ function CaseTable({ rows }: { rows: CaseTableRow[] }) {
   )
 }
 
-function OtherForms({ forms }: { forms: InflectionForm[] }) {
+function CaseValueTable({
+  rows,
+  caseColumnWidth,
+  label,
+  valueKey,
+}: {
+  rows: CaseTableRow[]
+  caseColumnWidth: number
+  label: string
+  valueKey: "singular" | "plural"
+}) {
   return (
     <box width="100%" flexDirection="column">
       <text>
-        <span fg={homeScreenTheme.mutedText}>Form Value</span>
+        <span fg={homeScreenTheme.mutedText}>
+          {padNoTruncate("Case", caseColumnWidth)} {label}
+        </span>
+      </text>
+      {rows.map((row, index) =>
+        row === "spacer" ? (
+          <text key={`${valueKey}:spacer:${index}`}> </text>
+        ) : (
+          <text key={`${valueKey}:${row.name}`}>
+            {padNoTruncate(row.name, caseColumnWidth)} {row[valueKey]}
+          </text>
+        ),
+      )}
+    </box>
+  )
+}
+
+function OtherForms({
+  forms,
+  leadingColumnWidth,
+}: {
+  forms: InflectionForm[]
+  leadingColumnWidth: number
+}) {
+  return (
+    <box width="100%" flexDirection="column">
+      <text>
+        <span fg={homeScreenTheme.mutedText}>
+          {padNoTruncate("Form", leadingColumnWidth)} Value
+        </span>
       </text>
       {forms.map((form) => (
         <text key={`${form.label}:${form.value}`}>
-          {pad(form.label, 28)} {form.value}
+          {padNoTruncate(form.label, leadingColumnWidth)} {form.value}
         </text>
       ))}
     </box>
+  )
+}
+
+function getCaseColumnWidth(rows: CaseTableRow[]) {
+  return Math.max(
+    12,
+    ...rows.filter((row): row is CaseRow => row !== "spacer").map((row) => row.name.length + 1),
   )
 }
 
