@@ -152,9 +152,6 @@ function mapKaikkiEntries(entries: KaikkiEntry[]): WordDetail {
     sounds.map((sound) => sound.ipa?.trim()).filter((ipa): ipa is string => Boolean(ipa)),
   ).slice(0, 2)
   const inflections = mapInflections(forms)
-  const pronunciationUrl = sounds.find((sound) => sound.ogg_url || sound.mp3_url || sound.audio)?.ogg_url
-    ?? sounds.find((sound) => sound.ogg_url || sound.mp3_url || sound.audio)?.mp3_url
-    ?? sounds.find((sound) => sound.ogg_url || sound.mp3_url || sound.audio)?.audio
 
   return {
     id: `kaikki:${normalizedWord}:${primaryEntry?.pos ?? "other"}`,
@@ -164,7 +161,6 @@ function mapKaikkiEntries(entries: KaikkiEntry[]): WordDetail {
     meaningGroups,
     gradation,
     pronunciations: pronunciations.length > 0 ? pronunciations : undefined,
-    pronunciationUrl,
     inflections: inflections.length > 0 ? inflections : undefined,
     source: "kaikki",
   }

@@ -13,8 +13,10 @@ import React from "react"
 import { useNavigate, useOutletContext, useSearchParams } from "react-router"
 
 import type { RootLayoutOutletContext } from "../../root-layout.types"
+import { playPronunciation, stopPronunciation } from "../../pronunciation/pronunciation-player"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
 import { DetailsView } from "../common/details-view"
+import { wordDetailQueryOptions } from "../common/details-view.queries"
 import { WordExampleDialog } from "../common/word-example/word-example-dialog"
 import { wordExampleQueryOptions } from "../common/word-detail/word-detail.queries"
 import {
@@ -262,6 +264,10 @@ export function WordExplorer() {
 
   React.useEffect(() => {
     setAutocompleteActive(false)
+
+    return () => {
+      stopPronunciation()
+    }
   }, [setAutocompleteActive])
 
   React.useEffect(() => {
@@ -332,6 +338,29 @@ export function WordExplorer() {
     },
     [],
   )
+
+  const handlePlayPronunciation = React.useCallback(() => {
+    if (!selectedWord || !selectedDetail || isFetchingDifferentSelection) {
+      return
+    }
+
+    setErrorMessage(null)
+
+    void (async () => {
+      try {
+        const detail = await queryClient.fetchQuery(wordDetailQueryOptions(selectedWord))
+
+        if (!detail) {
+          setErrorMessage("No pronunciation available for this word.")
+          return
+        }
+
+        await playPronunciation(detail)
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : "Failed to play pronunciation.")
+      }
+    })()
+  }, [isFetchingDifferentSelection, queryClient, selectedDetail, selectedWord])
 
   React.useEffect(() => {
     if (tagsQuery.isPending) {
@@ -462,6 +491,11 @@ export function WordExplorer() {
         }
       })()
 
+      return
+    }
+
+    if (key.ctrl && key.name === "p") {
+      handlePlayPronunciation()
       return
     }
 

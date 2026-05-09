@@ -1,11 +1,12 @@
 import React from "react"
 import "opentui-spinner/react"
 
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { WordDetail } from "@puhutko/shared"
+import { queryKeys } from "../../query/query-keys"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
 import { wordDetailQueryOptions } from "./details-view.queries"
-import { WordDetailView } from "./word-detail/word-detail"
+import { type PronunciationIndicatorState, WordDetailView } from "./word-detail/word-detail"
 
 type TagsManagerDialogWord = Pick<WordDetail, "id" | "word">
 
@@ -36,6 +37,7 @@ export function DetailsView({
   onTagSelect,
   onSelectionStateChange,
 }: DetailsViewProps) {
+  const queryClient = useQueryClient()
   const detailQuery = useQuery({
     ...wordDetailQueryOptions(selection?.query ?? ""),
     enabled: Boolean(selection),
@@ -46,6 +48,12 @@ export function DetailsView({
   const isFetchingDifferentSelection = detailQuery.isFetching && detailQuery.isPlaceholderData
   const showPendingSpinner = detailQuery.isPending || isFetchingDifferentSelection
   const activeDetail = selection && !detailQuery.isPlaceholderData && detail ? detail : null
+  const selectedCachedDetail = selection
+    ? (queryClient.getQueryData<WordDetail | null>(queryKeys.wordDetail(selection.query)) ?? null)
+    : null
+  const pronunciationIndicatorState = getPronunciationIndicatorState(
+    activeDetail ?? selectedCachedDetail,
+  )
 
   React.useEffect(() => {
     onSelectionStateChange?.({
@@ -74,6 +82,7 @@ export function DetailsView({
                   contentWidth={contentWidth}
                   detail={detail}
                   focused={focused}
+                  pronunciationIndicatorState={pronunciationIndicatorState}
                   showTagManagementHint={showTagManagementHint}
                   onTagSelect={onTagSelect}
                 />
@@ -90,7 +99,7 @@ export function DetailsView({
                   <strong>{selection.label}</strong>
                 </text>
                 <text>
-                  <span fg={homeScreenTheme.errorText}>Failed to load Kaikki details.</span>
+                  <span fg={homeScreenTheme.errorText}>Failed to load word details.</span>
                 </text>
               </>
             ) : (
@@ -99,7 +108,7 @@ export function DetailsView({
                   <strong>{selection.label}</strong>
                 </text>
                 <text>
-                  <span fg={homeScreenTheme.mutedText}>No Kaikki detail found for this word.</span>
+                  <span fg={homeScreenTheme.mutedText}>No word detail found for this word.</span>
                 </text>
               </>
             )
@@ -111,10 +120,20 @@ export function DetailsView({
         </box>
       </scrollbox>
       {selection && showPendingSpinner ? (
-        <box position="absolute" bottom={0} right={1}>
+        <box position="absolute" top={0} left={1}>
           <spinner name="aesthetic" color={draculaColors.pink} />
         </box>
       ) : null}
     </box>
   )
+}
+
+function getPronunciationIndicatorState(
+  detail: WordDetail | null,
+): PronunciationIndicatorState {
+  if (!detail) {
+    return "hidden"
+  }
+
+  return (detail.pronunciationAudios?.length ?? 0) > 0 ? "recorded" : "tts"
 }

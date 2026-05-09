@@ -9,9 +9,11 @@ import type { RecentSearch } from "@puhutko/recent-searches"
 import type { WiktionarySearchItem } from "@puhutko/shared"
 import { searchFinnishWiktionaryEntries } from "@puhutko/wiktionary"
 import { recentSearchesService } from "../../persistence"
+import { playPronunciation, stopPronunciation } from "../../pronunciation/pronunciation-player"
 import type { RootLayoutOutletContext } from "../../root-layout.types"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
 import { DetailsView } from "../common/details-view"
+import { wordDetailQueryOptions } from "../common/details-view.queries"
 import { WordExampleDialog } from "../common/word-example/word-example-dialog"
 import { wordExampleQueryOptions } from "../common/word-detail/word-detail.queries"
 import { TagsManagerDialog } from "../common/word-tags/tags-manager-dialog"
@@ -196,8 +198,31 @@ export function WordSearch() {
       params.set("tag", tagId)
       navigate({ pathname: "/word-explorer", search: `?${params.toString()}` })
     },
-    [navigate],
+    [navigate]
   )
+
+  const handlePlayPronunciation = React.useCallback(() => {
+    if (!selectedItem || !selectedDetail || isFetchingDifferentSelection) {
+      return
+    }
+
+    setErrorMessage(null)
+
+    void (async () => {
+      try {
+        const detail = await queryClient.fetchQuery(wordDetailQueryOptions(selectedItem.value))
+
+        if (!detail) {
+          setErrorMessage("No pronunciation available for this word.")
+          return
+        }
+
+        await playPronunciation(detail)
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : "Failed to play pronunciation.")
+      }
+    })()
+  }, [isFetchingDifferentSelection, queryClient, selectedDetail, selectedItem])
 
   React.useEffect(() => {
     if (!recentSearchesQuery.error) {
@@ -218,6 +243,7 @@ export function WordSearch() {
   React.useEffect(() => {
     return () => {
       setAutocompleteActive(false)
+      stopPronunciation()
     }
   }, [setAutocompleteActive])
 
@@ -296,6 +322,11 @@ export function WordSearch() {
         }
       })()
 
+      return
+    }
+
+    if (key.ctrl && key.name === "p") {
+      handlePlayPronunciation()
       return
     }
 

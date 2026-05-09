@@ -2,6 +2,7 @@ import type { WordDetail } from "@puhutko/shared"
 import { useQuery } from "@tanstack/react-query"
 import React from "react"
 
+import { isPronunciationPlaybackSupported } from "../../../pronunciation/pronunciation-player"
 import { draculaColors, homeScreenTheme } from "../../../theme/colors"
 import { wordExampleQueryOptions, wordTagsQueryOptions } from "./word-detail.queries"
 import { GradationHeader } from "./gradation"
@@ -11,16 +12,20 @@ type WordDetailProps = {
   contentWidth: number
   detail: WordDetail | null
   focused?: boolean
+  pronunciationIndicatorState?: PronunciationIndicatorState
   showTagManagementHint?: boolean
   onTagSelect?: (tagId: string) => void
 }
 
 export { normalizeAsciiFontWord, splitStrongGrade } from "./gradation"
 
+export type PronunciationIndicatorState = "hidden" | "recorded" | "tts"
+
 export function WordDetailView({
   contentWidth,
   detail,
   focused = false,
+  pronunciationIndicatorState,
   showTagManagementHint = true,
   onTagSelect,
 }: WordDetailProps) {
@@ -41,6 +46,13 @@ export function WordDetailView({
     .filter((item) => item.assigned)
     .map((item) => ({ id: item.tag.id, name: item.tag.name }))
   const wordExampleText = wordExampleQuery.data?.text ?? null
+  const supportsPronunciationPlayback = isPronunciationPlaybackSupported()
+  const effectivePronunciationIndicatorState = pronunciationIndicatorState
+    ?? (supportsPronunciationPlayback
+      ? (detail.pronunciationAudios?.length ?? 0) > 0
+        ? "recorded"
+        : "tts"
+      : "hidden")
 
   const exampleLines = wordExampleText ? wordExampleText.split("\n") : []
 
@@ -54,16 +66,18 @@ export function WordDetailView({
         ) : null}
       </box>
 
-      {detail.pronunciationUrl ? (
-        <box width="100%" flexDirection="column">
-          <text>
-            <strong>Audio</strong>
+      <box width="100%" flexDirection="column">
+        {supportsPronunciationPlayback && effectivePronunciationIndicatorState !== "hidden" ? (
+          <text fg={homeScreenTheme.mutedText}>
+            {effectivePronunciationIndicatorState === "recorded" ? (
+              <span fg={draculaColors.green}>• </span>
+            ) : effectivePronunciationIndicatorState === "tts" ? (
+              <span fg={draculaColors.orange}>• </span>
+            ) : null}
+            Ctrl+p Pronounce
           </text>
-          <text>
-            <span fg={homeScreenTheme.linkText}>{detail.pronunciationUrl}</span>
-          </text>
-        </box>
-      ) : null}
+        ) : null}
+      </box>
 
       {detail.meaningGroups.map((group) => (
         <box key={`${detail.id}:${group.partOfSpeech}`} width="100%" flexDirection="column">

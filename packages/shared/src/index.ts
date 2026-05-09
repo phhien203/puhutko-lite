@@ -66,6 +66,17 @@ export type ConsonantGradation = {
   weakStart?: number
 }
 
+export type PronunciationAudio = {
+  fileName: string
+  caption?: string
+  qualifier?: string
+  pageUrl: string
+  source: "wiktionary-commons"
+  originalUrl: string
+  preferredPlaybackUrl: string
+  mimeType: string
+}
+
 export type WordDetail = {
   id: string
   word: string
@@ -74,7 +85,7 @@ export type WordDetail = {
   meaningGroups: MeaningGroup[]
   gradation?: ConsonantGradation
   pronunciations?: string[]
-  pronunciationUrl?: string
+  pronunciationAudios?: PronunciationAudio[]
   inflections?: InflectionForm[]
   source: "kaikki"
 }

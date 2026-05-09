@@ -8,6 +8,7 @@ export const draculaColors = {
   purple: "#9580FF",
   cyan: "#80FFEA",
   green: "#8AFF80",
+  orange: "#FFB86C",
   pink: "#FF80BF",
   red: "#FF9580",
   yellow: "#FFFF80",
