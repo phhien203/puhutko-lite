@@ -30,7 +30,7 @@ export function RootLayout({ routes }: RootLayoutProps) {
       : isNarrowTerminal
         ? "Ctrl+x Word Explorer   Ctrl+b Toggle Sidebar"
         : "Ctrl+x Word Explorer   Ctrl+b Toggle Sidebar   Ctrl+c Quit"
-  const footerCredits = isNarrowTerminal ? null : "Made with ❤︎ by Hien Pham"
+  const footerCredits = isNarrowTerminal ? null : "Made with love by Hien Pham"
   const setToggleSidebarShortcutHandler = React.useCallback((handler: (() => void) | null) => {
     toggleSidebarShortcutHandlerRef.current = handler
   }, [])
