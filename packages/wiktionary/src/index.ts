@@ -66,20 +66,49 @@ export async function searchFinnishWiktionaryEntries(
   signal: AbortSignal,
 ): Promise<WiktionarySearchItem[]> {
   const normalizedQuery = normalizeWord(query)
+  const logPrefix = "[wiktionary.searchFinnishWiktionaryEntries]"
 
   if (normalizedQuery.length === 0) {
+    console.info(`${logPrefix} skipping empty query`)
     return []
   }
 
-  const response = await fetch(buildSearchUrl(normalizedQuery), { signal })
+  console.info(`${logPrefix} starting opensearch request`, {
+    query: normalizedQuery,
+  })
+
+  let response: Response
+
+  try {
+    response = await fetch(buildSearchUrl(normalizedQuery), { signal })
+  } catch (error) {
+    console.error(`${logPrefix} opensearch request failed`, {
+      query: normalizedQuery,
+      error,
+    })
+    throw error
+  }
+
+  console.info(`${logPrefix} opensearch response received`, {
+    query: normalizedQuery,
+    status: response.status,
+    ok: response.ok,
+  })
 
   if (!response.ok) {
+    console.warn(`${logPrefix} opensearch request returned non-ok response`, {
+      query: normalizedQuery,
+      status: response.status,
+    })
     return []
   }
 
   const payload = await response.json()
 
   if (!isOpenSearchResponse(payload)) {
+    console.warn(`${logPrefix} opensearch payload shape was invalid`, {
+      query: normalizedQuery,
+    })
     return []
   }
 
@@ -95,20 +124,56 @@ export async function searchFinnishWiktionaryEntries(
     .filter((item) => item.normalizedValue.startsWith(normalizedQuery))
 
   if (candidates.length === 0) {
+    console.info(`${logPrefix} no candidates matched normalized query`, {
+      query: normalizedQuery,
+      totalTitles: titles.length,
+    })
     return []
   }
 
-  const pageContentResponse = await fetch(buildPageContentUrl(candidates.map((item) => item.value)), {
-    signal,
+  console.info(`${logPrefix} starting page content request`, {
+    query: normalizedQuery,
+    candidateCount: candidates.length,
+  })
+
+  let pageContentResponse: Response
+
+  try {
+    pageContentResponse = await fetch(buildPageContentUrl(candidates.map((item) => item.value)), {
+      signal,
+    })
+  } catch (error) {
+    console.error(`${logPrefix} page content request failed`, {
+      query: normalizedQuery,
+      candidateCount: candidates.length,
+      error,
+    })
+    throw error
+  }
+
+  console.info(`${logPrefix} page content response received`, {
+    query: normalizedQuery,
+    status: pageContentResponse.status,
+    ok: pageContentResponse.ok,
+    candidateCount: candidates.length,
   })
 
   if (!pageContentResponse.ok) {
+    console.warn(`${logPrefix} page content request returned non-ok response`, {
+      query: normalizedQuery,
+      status: pageContentResponse.status,
+      candidateCount: candidates.length,
+    })
     return []
   }
 
   const pageContentPayload = await pageContentResponse.json()
 
   if (!isPageContentResponse(pageContentPayload)) {
+    console.warn(`${logPrefix} page content payload shape was invalid`, {
+      query: normalizedQuery,
+      candidateCount: candidates.length,
+    })
     return []
   }
 
@@ -122,8 +187,17 @@ export async function searchFinnishWiktionaryEntries(
     }
   }
 
-  return candidates
+  const results = candidates
     .filter((item) => finnishWords.has(item.value))
     .slice(0, 20)
     .map(({ normalizedValue: _normalizedValue, ...item }) => item)
+
+  console.info(`${logPrefix} completed search`, {
+    query: normalizedQuery,
+    candidateCount: candidates.length,
+    finnishWordCount: finnishWords.size,
+    resultCount: results.length,
+  })
+
+  return results
 }

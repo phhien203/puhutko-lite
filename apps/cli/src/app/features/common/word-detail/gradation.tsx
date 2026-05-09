@@ -42,7 +42,7 @@ function HighlightedGradationAsciiFont({
   const parts = splitStrongGrade(normalizedWord, gradation)
 
   if (parts.length === 1 && !parts[0]?.highlight) {
-    return <ascii-font text={normalizedWord} font="block" color={defaultAsciiFontColor} />
+    return <ascii-font text={normalizedWord} font="slick" color={defaultAsciiFontColor} />
   }
 
   return (
@@ -52,7 +52,7 @@ function HighlightedGradationAsciiFont({
           <ascii-font
             key={`${index}:${part.value}`}
             text={part.value}
-            font="block"
+            font="slick"
             color={part.highlight ? getHighlightColor(part.highlightType) : defaultAsciiFontColor}
           />
         ) : null,

@@ -20,12 +20,13 @@ import { wordExampleQueryOptions } from "../common/word-detail/word-detail.queri
 import {
   FULLSCREEN_OVERLAY_WIDTH,
   NARROW_TERMINAL_WIDTH,
-  SIDEBAR_WIDTH,
 } from "../word-search/word-search.constants"
 import {
   wordExplorerTagsQueryOptions,
   wordExplorerWordsQueryOptions,
 } from "./word-explorer.queries"
+
+const SIDEBAR_WIDTH = 46
 
 type FocusTarget = "tags" | "words" | "details"
 
@@ -111,16 +112,15 @@ function SidebarContent({
   wordsScrollboxRef,
 }: SidebarContentProps) {
   return (
-    <>
+    <box flexDirection="column" gap={1}>
       <box
-        flexGrow={1}
-        minHeight={0}
+        height={"50%"}
         backgroundColor={
           focusTarget === "tags" ? draculaColors.currentLine : draculaColors.background
         }
         flexDirection="column"
       >
-        <text marginX={2} marginY={1}>
+        <text marginX={2} marginY={1} paddingBottom={1}>
           <strong>Tags</strong>
           <span fg={homeScreenTheme.mutedText}> [Space] Toggle</span>
         </text>
@@ -159,14 +159,13 @@ function SidebarContent({
       </box>
 
       <box
-        flexGrow={1}
-        minHeight={0}
+        height={"50%"}
         backgroundColor={
           focusTarget === "words" ? draculaColors.currentLine : draculaColors.background
         }
         flexDirection="column"
       >
-        <text marginX={2} marginY={1}>
+        <text marginX={2} marginY={1} paddingBottom={1}>
           <strong>Words</strong>
           <span fg={homeScreenTheme.mutedText}>
             {`  [Ctrl+S] Sorting by ${sortMode === "alphabetical" ? "A-Z" : "Added"}`}
@@ -198,7 +197,7 @@ function SidebarContent({
           </box>
         </scrollbox>
       </box>
-    </>
+    </box>
   )
 }
 
@@ -213,14 +212,18 @@ export function WordExplorer() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tagsQuery = useQuery(wordExplorerTagsQueryOptions())
   const initialTagIds = React.useMemo(() => searchParams.getAll("tag"), [])
-  const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>(() => Array.from(new Set(initialTagIds)))
+  const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>(() =>
+    Array.from(new Set(initialTagIds)),
+  )
   const [sortMode, setSortMode] = React.useState<WordExplorerSortMode>("added")
   const [tagSelectedIndex, setTagSelectedIndex] = React.useState(0)
   const [wordSelectedIndex, setWordSelectedIndex] = React.useState(0)
   const [focusTarget, setFocusTarget] = React.useState<FocusTarget>("tags")
   const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(true)
   const [isSidebarOverlayOpen, setIsSidebarOverlayOpen] = React.useState(false)
-  const [selectedDetail, setSelectedDetail] = React.useState<{ id: string; word: string } | null>(null)
+  const [selectedDetail, setSelectedDetail] = React.useState<{ id: string; word: string } | null>(
+    null,
+  )
   const [isFetchingDifferentSelection, setIsFetchingDifferentSelection] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
   const tagsScrollboxRef = React.useRef<ScrollBoxRenderable | null>(null)
@@ -305,11 +308,16 @@ export function WordExplorer() {
     }
 
     const firstError = tagsQuery.error ?? wordsQuery.error
-    setErrorMessage(firstError instanceof Error ? firstError.message : "Failed to load explorer data.")
+    setErrorMessage(
+      firstError instanceof Error ? firstError.message : "Failed to load explorer data.",
+    )
   }, [tagsQuery.error, wordsQuery.error])
 
   const handleSelectionStateChange = React.useCallback(
-    (value: { detail: { id: string; word: string } | null; isFetchingDifferentSelection: boolean }) => {
+    (value: {
+      detail: { id: string; word: string } | null
+      isFetchingDifferentSelection: boolean
+    }) => {
       setSelectedDetail(value.detail)
       setIsFetchingDifferentSelection(value.isFetchingDifferentSelection)
     },
@@ -430,13 +438,13 @@ export function WordExplorer() {
           await dialog.prompt({
             size: "large",
             content: (context) => (
-                <WordExampleDialog
-                  dialogId={context.dialogId}
-                  wordId={selectedWordId}
-                  word={selectedDetail.word}
-                  initialValue={wordExample?.text ?? ""}
-                  resolve={context.resolve}
-                  dismiss={context.dismiss}
+              <WordExampleDialog
+                dialogId={context.dialogId}
+                wordId={selectedWordId}
+                word={selectedDetail.word}
+                initialValue={wordExample?.text ?? ""}
+                resolve={context.resolve}
+                dismiss={context.dismiss}
               />
             ),
           })
@@ -498,9 +506,7 @@ export function WordExplorer() {
       }
 
       if (key.name === "s" && key.ctrl && !key.meta && !key.option) {
-        setSortMode((currentMode) =>
-          currentMode === "alphabetical" ? "added" : "alphabetical",
-        )
+        setSortMode((currentMode) => (currentMode === "alphabetical" ? "added" : "alphabetical"))
         setWordSelectedIndex(0)
         return
       }

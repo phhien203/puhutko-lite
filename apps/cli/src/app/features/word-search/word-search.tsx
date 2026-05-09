@@ -68,7 +68,7 @@ function SidebarContent({
           onSelect={onSelect}
           focused={autocompleteFocused}
           autoHighlightFirst={true}
-          debounceMs={400}
+          debounceMs={500}
           maxVisibleItems={20}
           placeholder="Enter a Finnish word..."
           loaderFn={searchFinnishWiktionaryEntries}
