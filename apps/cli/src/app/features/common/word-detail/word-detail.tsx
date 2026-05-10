@@ -14,6 +14,7 @@ type WordDetailProps = {
   focused?: boolean
   pronunciationIndicatorState?: PronunciationIndicatorState
   showTagManagementHint?: boolean
+  tagHintText?: string | null
   onTagSelect?: (tagId: string) => void
 }
 
@@ -27,6 +28,7 @@ export function WordDetailView({
   focused = false,
   pronunciationIndicatorState,
   showTagManagementHint = true,
+  tagHintText,
   onTagSelect,
 }: WordDetailProps) {
   const tagsQuery = useQuery({
@@ -55,6 +57,7 @@ export function WordDetailView({
       : "hidden")
 
   const exampleLines = wordExampleText ? wordExampleText.split("\n") : []
+  const effectiveTagHintText = tagHintText === undefined ? "Ctrl+t Manage tags" : tagHintText
 
   return (
     <box width="100%" flexDirection="column" gap={1}>
@@ -125,8 +128,8 @@ export function WordDetailView({
           <text fg={homeScreenTheme.mutedText}>No tags yet.</text>
         )}
 
-        {showTagManagementHint ? (
-          <text fg={homeScreenTheme.mutedText}>Ctrl+t Manage tags</text>
+        {showTagManagementHint && effectiveTagHintText ? (
+          <text fg={homeScreenTheme.mutedText}>{effectiveTagHintText}</text>
         ) : null}
       </box>
 

@@ -20,6 +20,7 @@ type DetailsViewProps = {
   selection: DetailSelection | null
   focused?: boolean
   showTagManagementHint?: boolean
+  tagHintText?: string | null
   emptyStateMessage?: string
   onTagSelect?: (tagId: string) => void
   onSelectionStateChange?: (value: {
@@ -33,6 +34,7 @@ export function DetailsView({
   selection,
   focused = false,
   showTagManagementHint = true,
+  tagHintText,
   emptyStateMessage,
   onTagSelect,
   onSelectionStateChange,
@@ -84,6 +86,7 @@ export function DetailsView({
                   focused={focused}
                   pronunciationIndicatorState={pronunciationIndicatorState}
                   showTagManagementHint={showTagManagementHint}
+                  tagHintText={tagHintText}
                   onTagSelect={onTagSelect}
                 />
               </>

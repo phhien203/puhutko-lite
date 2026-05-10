@@ -135,6 +135,18 @@ export function createWordTagsService(repository: WordTagsRepository): WordTagsS
       assertTagFound(existingTag, tagId)
       await repository.deleteTag(tagId)
     },
+    async assignTagToWord(wordId, tagId) {
+      const [tag, assignedTagIds] = await Promise.all([repository.getTagById(tagId), repository.listTagIdsForWord(wordId)])
+
+      assertTagFound(tag, tagId)
+
+      if (assignedTagIds.includes(tagId)) {
+        return false
+      }
+
+      await repository.assignTagToWord(wordId, tagId)
+      return true
+    },
     async toggleTagAssignment(wordId, tagId) {
       const [tag, assignedTagIds] = await Promise.all([repository.getTagById(tagId), repository.listTagIdsForWord(wordId)])
 

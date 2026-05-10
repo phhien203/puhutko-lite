@@ -49,5 +49,6 @@ export type WordTagsService = {
   createTag(name: string): Promise<Tag>
   renameTag(tagId: string, name: string): Promise<Tag>
   deleteTag(tagId: string): Promise<void>
+  assignTagToWord(wordId: string, tagId: string): Promise<boolean>
   toggleTagAssignment(wordId: string, tagId: string): Promise<boolean>
 }
