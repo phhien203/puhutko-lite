@@ -3,16 +3,32 @@ export function appSignature(target: "server" | "cli") {
 }
 
 export type PartOfSpeech =
+  | "abbreviation"
   | "noun"
+  | "proper noun"
   | "verb"
   | "adjective"
   | "adverb"
+  | "conjunction"
   | "pronoun"
+  | "determiner"
+  | "interjection"
   | "numeral"
   | "particle"
+  | "phrase"
+  | "proverb"
+  | "prefix"
+  | "suffix"
+  | "interfix"
   | "postposition"
   | "preposition"
+  | "contraction"
+  | "punctuation"
+  | "symbol"
+  | "character"
   | "other"
+
+export type RawPartOfSpeech = string
 
 export type WiktionarySearchItem = {
   label: string
@@ -22,6 +38,7 @@ export type WiktionarySearchItem = {
 }
 
 export type MeaningGroup = {
+  rawPartOfSpeech: RawPartOfSpeech
   partOfSpeech: PartOfSpeech
   meanings: string[]
 }
@@ -81,6 +98,7 @@ export type WordDetail = {
   id: string
   word: string
   normalizedWord: string
+  rawPartOfSpeech: RawPartOfSpeech
   partOfSpeech: PartOfSpeech
   meaningGroups: MeaningGroup[]
   gradation?: ConsonantGradation

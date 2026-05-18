@@ -6,6 +6,7 @@ import type {
   InflectionForm,
   MeaningGroup,
   PartOfSpeech,
+  RawPartOfSpeech,
   WordDetail,
 } from "@puhutko/shared"
 
@@ -73,6 +74,50 @@ const supportedGradationPatterns = new Map<string, NormalizedConsonantGradation>
   ["k-v", { pattern: "k-v", strong: "k", weak: "v", sourcePattern: "k-v" }],
   ["ik-j", { pattern: "k-j", strong: "k", weak: "j", sourcePattern: "ik-j" }],
 ])
+
+const kaikkiPartOfSpeechMap: Record<string, PartOfSpeech> = {
+  abbrev: "abbreviation",
+  adjective: "adjective",
+  adj: "adjective",
+  adnominal: "adjective",
+  adj_noun: "adjective",
+  adj_verb: "adjective",
+  adverb: "adverb",
+  adv: "adverb",
+  article: "determiner",
+  character: "character",
+  conjunction: "conjunction",
+  conj: "conjunction",
+  contraction: "contraction",
+  determiner: "determiner",
+  det: "determiner",
+  interfix: "interfix",
+  interjection: "interjection",
+  intj: "interjection",
+  name: "proper noun",
+  noun: "noun",
+  numeral: "numeral",
+  num: "numeral",
+  particle: "particle",
+  phrase: "phrase",
+  postposition: "postposition",
+  postp: "postposition",
+  prefix: "prefix",
+  preposition: "preposition",
+  prep: "preposition",
+  pronoun: "pronoun",
+  pron: "pronoun",
+  proverb: "proverb",
+  punctuation: "punctuation",
+  punct: "punctuation",
+  suffix: "suffix",
+  symbol: "symbol",
+  verb: "verb",
+  "proper noun": "proper noun",
+  "proper-noun": "proper noun",
+  proper_noun: "proper noun",
+  propn: "proper noun",
+}
 
 export async function getFinnishWordDetail(word: string, signal?: AbortSignal): Promise<WordDetail | null> {
   const normalizedWord = normalizeWord(word)
@@ -143,7 +188,8 @@ function mapKaikkiEntries(entries: KaikkiEntry[]): WordDetail {
   const primaryEntry = entries[0]
   const word = primaryEntry?.word ?? ""
   const normalizedWord = normalizeWord(word)
-  const partOfSpeech = mapPartOfSpeech(primaryEntry?.pos)
+  const rawPartOfSpeech = getRawPartOfSpeech(primaryEntry?.pos)
+  const partOfSpeech = mapPartOfSpeech(rawPartOfSpeech)
   const forms = entries.flatMap((entry) => entry.forms ?? [])
   const sounds = entries.flatMap((entry) => entry.sounds ?? [])
   const meaningGroups = mapMeaningGroups(entries)
@@ -157,6 +203,7 @@ function mapKaikkiEntries(entries: KaikkiEntry[]): WordDetail {
     id: `kaikki:${normalizedWord}:${primaryEntry?.pos ?? "other"}`,
     word,
     normalizedWord,
+    rawPartOfSpeech,
     partOfSpeech,
     meaningGroups,
     gradation,
@@ -167,23 +214,32 @@ function mapKaikkiEntries(entries: KaikkiEntry[]): WordDetail {
 }
 
 function mapMeaningGroups(entries: KaikkiEntry[]): MeaningGroup[] {
-  const groups = new Map<PartOfSpeech, string[]>()
+  const groups = new Map<RawPartOfSpeech, MeaningGroup>()
 
   for (const entry of entries) {
-    const partOfSpeech = mapPartOfSpeech(entry.pos)
+    const rawPartOfSpeech = getRawPartOfSpeech(entry.pos)
+    const partOfSpeech = mapPartOfSpeech(rawPartOfSpeech)
     const meanings = unique(entry.senses?.flatMap((sense) => sense.glosses ?? sense.raw_glosses ?? []).filter(Boolean) ?? [])
 
     if (meanings.length === 0) {
       continue
     }
 
-    groups.set(partOfSpeech, unique([...(groups.get(partOfSpeech) ?? []), ...meanings]).slice(0, 8))
+    const existingGroup = groups.get(rawPartOfSpeech)
+
+    if (existingGroup) {
+      existingGroup.meanings = unique([...existingGroup.meanings, ...meanings]).slice(0, 8)
+      continue
+    }
+
+    groups.set(rawPartOfSpeech, {
+      rawPartOfSpeech,
+      partOfSpeech,
+      meanings: meanings.slice(0, 8),
+    })
   }
 
-  return [...groups.entries()].map(([partOfSpeech, meanings]) => ({
-    partOfSpeech,
-    meanings,
-  }))
+  return [...groups.values()]
 }
 
 function mapInflections(forms: KaikkiEntry["forms"]): InflectionForm[] {
@@ -511,37 +567,12 @@ function getVerbTense(tags: string[]): InflectionForm["tense"] {
   return undefined
 }
 
+function getRawPartOfSpeech(pos: string | undefined): RawPartOfSpeech {
+  return pos?.trim() || "other"
+}
+
 function mapPartOfSpeech(pos: string | undefined): PartOfSpeech {
-  switch (pos) {
-    case "noun":
-    case "verb":
-    case "adjective":
-    case "adverb":
-    case "pronoun":
-    case "numeral":
-    case "particle":
-      return pos
-    case "proper noun":
-    case "proper-noun":
-    case "proper_noun":
-    case "propn":
-    case "name":
-      return "noun"
-    case "postposition":
-    case "postp":
-      return "postposition"
-    case "preposition":
-    case "prep":
-      return "preposition"
-    case "adj":
-      return "adjective"
-    case "adv":
-      return "adverb"
-    case "num":
-      return "numeral"
-    default:
-      return "other"
-  }
+  return pos ? kaikkiPartOfSpeechMap[pos] ?? "other" : "other"
 }
 
 function unique(values: string[]) {

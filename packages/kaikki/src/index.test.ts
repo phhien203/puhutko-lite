@@ -1,3 +1,4 @@
+import type { PartOfSpeech } from "@puhutko/shared"
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 import { getFinnishWordDetail } from "./index"
 
@@ -10,6 +11,16 @@ type KaikkiEntryFixture = {
   word: string
   pos: string
   forms: KaikkiFormFixture[]
+  senses?: Array<{
+    glosses?: string[]
+    raw_glosses?: string[]
+  }>
+}
+
+type PartOfSpeechCase = {
+  word: string
+  rawPartOfSpeech: string
+  expectedPartOfSpeech: PartOfSpeech
 }
 
 const fixtures = new Map<string, KaikkiEntryFixture[]>([
@@ -113,6 +124,58 @@ const fixtures = new Map<string, KaikkiEntryFixture[]>([
   ],
 ])
 
+const finnishPartOfSpeechCases: PartOfSpeechCase[] = [
+  { word: "pos-abbrev", rawPartOfSpeech: "abbrev", expectedPartOfSpeech: "abbreviation" },
+  { word: "pos-adj", rawPartOfSpeech: "adj", expectedPartOfSpeech: "adjective" },
+  { word: "pos-adv", rawPartOfSpeech: "adv", expectedPartOfSpeech: "adverb" },
+  { word: "pos-character", rawPartOfSpeech: "character", expectedPartOfSpeech: "character" },
+  { word: "pos-conj", rawPartOfSpeech: "conj", expectedPartOfSpeech: "conjunction" },
+  { word: "pos-contraction", rawPartOfSpeech: "contraction", expectedPartOfSpeech: "contraction" },
+  { word: "pos-det", rawPartOfSpeech: "det", expectedPartOfSpeech: "determiner" },
+  { word: "pos-interfix", rawPartOfSpeech: "interfix", expectedPartOfSpeech: "interfix" },
+  { word: "pos-intj", rawPartOfSpeech: "intj", expectedPartOfSpeech: "interjection" },
+  { word: "pos-name", rawPartOfSpeech: "name", expectedPartOfSpeech: "proper noun" },
+  { word: "pos-noun", rawPartOfSpeech: "noun", expectedPartOfSpeech: "noun" },
+  { word: "pos-num", rawPartOfSpeech: "num", expectedPartOfSpeech: "numeral" },
+  { word: "pos-particle", rawPartOfSpeech: "particle", expectedPartOfSpeech: "particle" },
+  { word: "pos-phrase", rawPartOfSpeech: "phrase", expectedPartOfSpeech: "phrase" },
+  { word: "pos-postp", rawPartOfSpeech: "postp", expectedPartOfSpeech: "postposition" },
+  { word: "pos-prefix", rawPartOfSpeech: "prefix", expectedPartOfSpeech: "prefix" },
+  { word: "pos-prep", rawPartOfSpeech: "prep", expectedPartOfSpeech: "preposition" },
+  { word: "pos-pron", rawPartOfSpeech: "pron", expectedPartOfSpeech: "pronoun" },
+  { word: "pos-proverb", rawPartOfSpeech: "proverb", expectedPartOfSpeech: "proverb" },
+  { word: "pos-punct", rawPartOfSpeech: "punct", expectedPartOfSpeech: "punctuation" },
+  { word: "pos-suffix", rawPartOfSpeech: "suffix", expectedPartOfSpeech: "suffix" },
+  { word: "pos-symbol", rawPartOfSpeech: "symbol", expectedPartOfSpeech: "symbol" },
+  { word: "pos-verb", rawPartOfSpeech: "verb", expectedPartOfSpeech: "verb" },
+]
+
+for (const partOfSpeechCase of finnishPartOfSpeechCases) {
+  fixtures.set(partOfSpeechCase.word, [
+    {
+      word: partOfSpeechCase.word,
+      pos: partOfSpeechCase.rawPartOfSpeech,
+      forms: [],
+      senses: [{ glosses: [partOfSpeechCase.word] }],
+    },
+  ])
+}
+
+fixtures.set("joka-test", [
+  {
+    word: "joka-test",
+    pos: "pron",
+    forms: [{ form: "joka-test", tags: ["nominative", "singular"] }],
+    senses: [{ glosses: ["relative pronoun"] }],
+  },
+  {
+    word: "joka-test",
+    pos: "det",
+    forms: [],
+    senses: [{ glosses: ["determiner"] }],
+  },
+])
+
 const originalFetch = globalThis.fetch
 
 beforeEach(() => {
@@ -209,5 +272,35 @@ describe("getFinnishWordDetail gradation inference", () => {
       strongStart: 2,
     })
     expect(detail?.gradation?.weakStart).toBeUndefined()
+  })
+})
+
+describe("getFinnishWordDetail part-of-speech mapping", () => {
+  for (const partOfSpeechCase of finnishPartOfSpeechCases) {
+    test(`maps ${partOfSpeechCase.rawPartOfSpeech} to ${partOfSpeechCase.expectedPartOfSpeech}`, async () => {
+      const detail = await getFinnishWordDetail(partOfSpeechCase.word)
+
+      expect(detail?.rawPartOfSpeech).toBe(partOfSpeechCase.rawPartOfSpeech)
+      expect(detail?.partOfSpeech).toBe(partOfSpeechCase.expectedPartOfSpeech)
+    })
+  }
+
+  test("preserves raw part of speech per meaning group", async () => {
+    const detail = await getFinnishWordDetail("joka-test")
+
+    expect(detail?.rawPartOfSpeech).toBe("pron")
+    expect(detail?.partOfSpeech).toBe("pronoun")
+    expect(detail?.meaningGroups).toEqual([
+      {
+        rawPartOfSpeech: "pron",
+        partOfSpeech: "pronoun",
+        meanings: ["relative pronoun"],
+      },
+      {
+        rawPartOfSpeech: "det",
+        partOfSpeech: "determiner",
+        meanings: ["determiner"],
+      },
+    ])
   })
 })

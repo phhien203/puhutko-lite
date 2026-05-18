@@ -37,6 +37,15 @@ const nounCaseDisplayOrder: Array<{ caseName: FinnishNominalCase; label: string 
   { caseName: "translative", label: "Translative" },
 ]
 
+const nominalCaseTablePartsOfSpeech = new Set([
+  "noun",
+  "proper noun",
+  "adjective",
+  "pronoun",
+  "determiner",
+  "numeral",
+])
+
 const verbPersons = [
   { pronoun: "minä", person: "1", number: "singular" },
   { pronoun: "sinä", person: "2", number: "singular" },
@@ -99,7 +108,7 @@ export function InflectionTable({
     return <VerbInflections forms={inflections} stackPolarityColumns={stackVerbPolarityColumns} />
   }
 
-  const isLearningCaseTable = detail.partOfSpeech === "noun" || detail.partOfSpeech === "adjective"
+  const isLearningCaseTable = nominalCaseTablePartsOfSpeech.has(detail.partOfSpeech)
   const caseRows = isLearningCaseTable
     ? buildLearningCaseRows(inflections)
     : buildCaseRows(inflections)
