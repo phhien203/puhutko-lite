@@ -251,6 +251,24 @@ function parseConsonantGradation(word: string, forms: KaikkiEntry["forms"]): Con
     const gradation = normalizeConsonantGradation(className)
 
     if (gradation) {
+      if (gradation.weak === "ø") {
+        const strongStart = word.includes(gradation.strong)
+          ? inferStrongGradeStart(word, gradation, forms)
+          : undefined
+
+        if (strongStart !== undefined) {
+          return { ...gradation, strongStart }
+        }
+
+        const weakStart = inferWeakGradeStart(word, gradation, forms)
+
+        if (weakStart !== undefined) {
+          return { ...gradation, weakStart }
+        }
+
+        return { ...gradation }
+      }
+
       const strongStart = word.includes(gradation.strong)
         ? inferStrongGradeStart(word, gradation, forms)
         : undefined
@@ -312,6 +330,10 @@ function inferStrongGradeStart(word: string, gradation: NormalizedConsonantGrada
 
 function getWeakPrefixForStrongInference(word: string, gradation: NormalizedConsonantGradation, start: number) {
   if (gradation.weak === "ø") {
+    if (start === 0) {
+      return word.slice(gradation.strong.length)
+    }
+
     return word.slice(0, start)
   }
 
@@ -323,14 +345,30 @@ function getWeakPrefixForStrongInference(word: string, gradation: NormalizedCons
 }
 
 function inferWeakGradeStart(word: string, gradation: ConsonantGradation, forms: KaikkiEntry["forms"]): number | undefined {
+  const finiteActiveFormTokens = getFormTokens(forms, { finiteActiveVerbOnly: true })
+  const formTokens = finiteActiveFormTokens.length > 0 ? finiteActiveFormTokens : getFormTokens(forms)
+
+  if (gradation.weak === "ø") {
+    for (let start = word.length; start >= 0; start -= 1) {
+      const weakPrefix = word.slice(0, start)
+      const strongPrefix = `${weakPrefix}${gradation.strong}`
+
+      if (
+        formTokens.some((token) => token.startsWith(strongPrefix)) &&
+        formTokens.some((token) => token.startsWith(weakPrefix) && !token.startsWith(strongPrefix))
+      ) {
+        return start
+      }
+    }
+
+    return undefined
+  }
+
   const starts = getOccurrenceStarts(word, gradation.weak)
 
   if (starts.length === 0) {
     return undefined
   }
-
-  const finiteActiveFormTokens = getFormTokens(forms, { finiteActiveVerbOnly: true })
-  const formTokens = finiteActiveFormTokens.length > 0 ? finiteActiveFormTokens : getFormTokens(forms)
 
   for (let index = starts.length - 1; index >= 0; index -= 1) {
     const start = starts[index]
