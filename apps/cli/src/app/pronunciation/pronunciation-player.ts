@@ -21,6 +21,8 @@ type ManagedPlaybackOptions = {
 const pronunciationTempDirectory = join(tmpdir(), "puhutko-lite-pronunciation")
 const audioDownloadCache = new Map<string, Promise<string>>()
 
+export const PRONUNCIATION_PLAYBACK_SHORTCUT_ENABLED = false
+
 let activePlayback: ActivePlayback | null = null
 let playbackTransition: Promise<void> = Promise.resolve()
 let latestPlaybackRequestId = 0

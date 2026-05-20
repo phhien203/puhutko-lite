@@ -13,7 +13,11 @@ import React from "react"
 import { useNavigate, useOutletContext, useSearchParams } from "react-router"
 
 import type { RootLayoutOutletContext } from "../../root-layout.types"
-import { playPronunciation, stopPronunciation } from "../../pronunciation/pronunciation-player"
+import {
+  playPronunciation,
+  PRONUNCIATION_PLAYBACK_SHORTCUT_ENABLED,
+  stopPronunciation,
+} from "../../pronunciation/pronunciation-player"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
 import { DetailsView } from "../common/details-view"
 import { wordDetailQueryOptions } from "../common/details-view.queries"
@@ -568,7 +572,7 @@ export function WordExplorer() {
       return
     }
 
-    if (key.ctrl && key.name === "p") {
+    if (PRONUNCIATION_PLAYBACK_SHORTCUT_ENABLED && key.ctrl && key.name === "p") {
       handlePlayPronunciation()
       return
     }

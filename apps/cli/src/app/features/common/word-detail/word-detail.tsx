@@ -2,7 +2,10 @@ import type { WordDetail } from "@puhutko/shared"
 import { useQuery } from "@tanstack/react-query"
 import React from "react"
 
-import { isPronunciationPlaybackSupported } from "../../../pronunciation/pronunciation-player"
+import {
+  isPronunciationPlaybackSupported,
+  PRONUNCIATION_PLAYBACK_SHORTCUT_ENABLED,
+} from "../../../pronunciation/pronunciation-player"
 import { draculaColors, homeScreenTheme } from "../../../theme/colors"
 import { wordExampleQueryOptions, wordTagsQueryOptions } from "./word-detail.queries"
 import { GradationHeader } from "./gradation"
@@ -48,7 +51,8 @@ export function WordDetailView({
     .filter((item) => item.assigned)
     .map((item) => ({ id: item.tag.id, name: item.tag.name }))
   const wordExampleText = wordExampleQuery.data?.text ?? null
-  const supportsPronunciationPlayback = isPronunciationPlaybackSupported()
+  const supportsPronunciationPlayback =
+    PRONUNCIATION_PLAYBACK_SHORTCUT_ENABLED && isPronunciationPlaybackSupported()
   const effectivePronunciationIndicatorState = pronunciationIndicatorState
     ?? (supportsPronunciationPlayback
       ? (detail.pronunciationAudios?.length ?? 0) > 0

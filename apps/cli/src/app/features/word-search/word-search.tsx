@@ -9,7 +9,11 @@ import type { RecentSearch } from "@puhutko/recent-searches"
 import type { WiktionarySearchItem } from "@puhutko/shared"
 import { searchFinnishWiktionaryEntries } from "@puhutko/wiktionary"
 import { recentSearchesService } from "../../persistence"
-import { playPronunciation, stopPronunciation } from "../../pronunciation/pronunciation-player"
+import {
+  playPronunciation,
+  PRONUNCIATION_PLAYBACK_SHORTCUT_ENABLED,
+  stopPronunciation,
+} from "../../pronunciation/pronunciation-player"
 import type { RootLayoutOutletContext } from "../../root-layout.types"
 import { draculaColors, homeScreenTheme } from "../../theme/colors"
 import { DetailsView } from "../common/details-view"
@@ -325,7 +329,7 @@ export function WordSearch() {
       return
     }
 
-    if (key.ctrl && key.name === "p") {
+    if (PRONUNCIATION_PLAYBACK_SHORTCUT_ENABLED && key.ctrl && key.name === "p") {
       handlePlayPronunciation()
       return
     }
